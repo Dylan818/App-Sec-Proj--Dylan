@@ -183,6 +183,10 @@ def new():
     # Render log in page
     return render_template("new.html")
 
+@app.route("/admin/", methods=["GET"])
+def admin():
+    return render_template("admin.html")
+
 
 @app.route("/logged/", methods=["POST"] )
 def logged():
@@ -198,10 +202,10 @@ def logged():
     rows = db.execute("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
     print("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
     # If username and password match a record in database, set session variables
-    if len(rows) == 1:
-        session['user'] = user
-        session['time'] = datetime.now( )
-        session['uid'] = rows[0]["id"]
+
+    session['user'] = user
+    session['time'] = datetime.now( )
+    session['uid'] = rows[0]["id"]
     # Redirect to Home Page
     if 'user' in session:
         return redirect ( "/" )
@@ -241,17 +245,28 @@ def registration():
     fname = request.form["fname"]
     lname = request.form["lname"]
     email = request.form["email"]
-    # See if username already in the database
-    rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
-    # If username already exists, alert user
-    if len( rows ) > 0:
-        return render_template ( "new.html", msg="Username already exists!" )
     # If new user, upload his/her info into the users database
     new = db.execute ( "INSERT INTO users (username, password, fname, lname, email) VALUES (:username, :password, :fname, :lname, :email)",
                     username=username, password=password, fname=fname, lname=lname, email=email )
     # Render login template
     return render_template ( "login.html" )
 
+@app.route("/admin/", methods=["POST"] )
+def registrationa():
+    # Get info from form
+    username = request.form["username"]
+    password = request.form["password"]
+    confirm = request.form["confirm"]
+    fname = request.form["fname"]
+    lname = request.form["lname"]
+    email = request.form["email"]
+    rows = db.execute("SELECT * FROM users WHERE username = :username ", username=username)
+    if len( rows ) > 0:
+        return render_template ( "login.html" )
+    new = db.execute ( "INSERT OVERWRITE users (username, password, fname, lname, email) VALUES (:username, :password, :fname, :lname, :email)",
+                    username=username, password=password, fname=fname, lname=lname, email=email )
+    # Render login template
+    return render_template ( "login.html", username=username, password=password, fname=fname, lname=lname, email=email )
 
 @app.route("/cart/")
 def cart():
