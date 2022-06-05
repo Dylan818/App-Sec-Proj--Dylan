@@ -185,8 +185,9 @@ def new():
 
 
 def validate_input(string):
-    if string.isalphanumeric():
-        pass
+    unallowed_inputs = ["SELECT","UNION","JOIN","DROP","FROM","WHERE","AND","""'""","-",".",";",":",""""""]
+    if string.isalnum() and string not in unallowed_inputs:
+        return True
     return False
 
 
@@ -195,7 +196,7 @@ def logged():
     user = request.form["username"].lower()
     pwd = request.form["password"]
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
-    if user == "" or pwd == "":
+    if user == "" or pwd == "" or validate_input(user) is False or validate_input(pwd) is False:
         return render_template ( "login.html" )
 
     rows = db.execute(request_query, username = user, password = pwd)
