@@ -268,6 +268,9 @@ def cart():
     # Render shopping cart
     return render_template("cart.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session)
 
+@app.route("/adminlogin/")
+def adminLogin():
+    return render_template("adminlogin.html")
 
 # @app.errorhandler(404)
 # def pageNotFound( e ):
@@ -277,4 +280,4 @@ def cart():
 
 
 if __name__ == "__main__":
-   app.run( host='0.0.0.0', port=8080 )
+   app.run()
