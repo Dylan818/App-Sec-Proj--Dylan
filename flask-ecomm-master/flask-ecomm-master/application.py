@@ -3,10 +3,9 @@ from flask_session import Session
 from flask import Flask, render_template, redirect, request, session, jsonify
 from datetime import datetime
 
-# # Instantiate Flask object named app
 app = Flask(__name__)
 
-# # Configure sessions
+
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
@@ -196,8 +195,8 @@ def logged():
         return render_template ( "login.html" )
     # Find out if info in form matches a record in user database
     query = "SELECT * FROM users WHERE username = :user AND password = :pwd"
-    rows = db.execute ( query, user=user, pwd=pwd )
-
+    rows = db.execute("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
+    print("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
     # If username and password match a record in database, set session variables
     if len(rows) == 1:
         session['user'] = user
@@ -277,6 +276,5 @@ def cart():
 #     return render_template ( "404.html" ), 404
 
 
-#Only needed if Flask run is not used to execute the server
 if __name__ == "__main__":
    app.run( host='0.0.0.0', port=8080 )
