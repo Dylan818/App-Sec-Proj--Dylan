@@ -184,9 +184,14 @@ def new():
     return render_template("new.html")
 
 
+def validate_input(string):
+    if string.isalphanumeric():
+        pass
+    return False
+
+
 @app.route("/logged/", methods=["POST"] )
 def logged():
-    # Get log in info from log in form
     user = request.form["username"].lower()
     pwd = request.form["password"]
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
@@ -195,7 +200,6 @@ def logged():
 
     rows = db.execute(request_query, username = user, password = pwd)
     print("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
-    # If username and password match a record in database, set session variables
     if len(rows) == 1:
         session['user'] = user
         session['time'] = datetime.now( )
