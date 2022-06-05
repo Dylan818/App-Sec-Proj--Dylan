@@ -1,29 +1,4 @@
-// The submit button
-const SUBMIT = $( "#submit" );
 
-// Each of the fields and error message divs
-const USERNAME = $( "#username" );
-const USERNAME_MSG = $( "#user-msg" );
-
-const PASSWORD = $( "#password" );
-const PASSWORD_MSG = $( "#password-msg" );
-
-const CONFIRM = $( "#confirm" );
-const CONFIRM_MSG = $( "#confirm-msg" );
-
-const FNAME = $( "#fname" );
-const FNAME_MSG = $( "#fname-msg" );
-
-const LNAME = $( "#lname" );
-const LNAME_MSG = $( "#lname-msg" );
-
-const EMAIL = $( "#email" );
-const EMAIL_MSG = $( "#email-msg" );
-
-/**
- * Resets the error message fields and makes the submit
- * button visible.
- */
 function reset_form ( )
 {
     USERNAME_MSG.html( "" );
