@@ -27,7 +27,7 @@ function validate ( )
 
     // This currently checks to see if the username is
     // present and if it is at least 5 characters in length.
-    if ( !USERNAME.val() || USERNAME.val().length < 5  )
+    if ( !USERNAME.val().length < 5  )
     {
         // Show an invalid input message
         USERNAME_MSG.html( "Username must be 5 characters or more" );
@@ -47,14 +47,14 @@ function validate ( )
         valid = false;
     }
 
-    if ( !PASSWORD.val() || PASSWORD.val().length < 8 )
+    if ( !PASSWORD.val().length < 8 )
     {
         PASSWORD_MSG.html("Password needs to be at least 8 characters long");
         PASSWORD_MSG.show();
         valid = false;
     }
 
-    if ( !CONFIRM.val() || PASSWORD.val() != CONFIRM.val() )
+    if ( !PASSWORD.val() != CONFIRM.val() )
     {
         CONFIRM_MSG.html("Passwords don't match");
         CONFIRM_MSG.show();
