@@ -2,7 +2,7 @@ from cs50 import SQL
 from flask_session import Session
 from flask import Flask, render_template, redirect, request, session, jsonify
 from datetime import datetime
-
+import hashlib as hl
 app = Flask(__name__)
 
 
@@ -185,17 +185,18 @@ def new():
 
 
 def validate_input(string):
-    if string.isalphanumeric():
-        pass
+    unallowed_inputs = ["SELECT","UNION","JOIN","DROP","FROM","WHERE","AND","""'""","-",".",";",":",""""""]
+    if string.isalnum() and string not in unallowed_inputs:
+        return True
     return False
 
 
 @app.route("/logged/", methods=["POST"] )
 def logged():
     user = request.form["username"].lower()
-    pwd = request.form["password"]
+    pwd = hashing_pwsd(request.form["password"])
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
-    if user == "" or pwd == "":
+    if user == "" or pwd == "" or validate_input(user) is False or validate_input(pwd) is False:
         return render_template ( "login.html" )
 
     rows = db.execute(request_query, username = user, password = pwd)
@@ -234,10 +235,14 @@ def logout():
     return redirect("/")
 
 
+def hashing_pwsd(pwsd):
+        return hl.pbkdf2_hmac('sha256', str(pwsd).encode(), b'salt', 100000).hex()
+
+
 @app.route("/register/", methods=["POST"] )
 def registration():
     username = request.form["username"]
-    password = request.form["password"]
+    password = hashing_pwsd(request.form["password"])
     confirm = request.form["confirm"]
     fname = request.form["fname"]
     lname = request.form["lname"]
