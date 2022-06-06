@@ -202,10 +202,10 @@ def logged():
     rows = db.execute("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
     print("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
     # If username and password match a record in database, set session variables
-
-    session['user'] = user
-    session['time'] = datetime.now( )
-    session['uid'] = rows[0]["id"]
+    if len(rows) ==1:
+        session['user'] = user
+        session['time'] = datetime.now( )
+        session['uid'] = rows[0]["id"]
     # Redirect to Home Page
     if 'user' in session:
         return redirect ( "/" )
@@ -290,6 +290,10 @@ def cart():
 #         return render_template ( "404.html", session=session )
 #     return render_template ( "404.html" ), 404
 
+def show_sql():
+    rows = db.execute("SELECT * from USERS")
+    print(rows)
 
 if __name__ == "__main__":
+   show_sql()
    app.run()

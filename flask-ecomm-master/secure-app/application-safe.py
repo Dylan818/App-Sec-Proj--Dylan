@@ -277,6 +277,10 @@ def cart():
 #         return render_template ( "404.html", session=session )
 #     return render_template ( "404.html" ), 404
 
+def show_sql():
+    rows = db.execute("SELECT * from USERS")
+    print(rows)
 
 if __name__ == "__main__":
+   show_sql()
    app.run( host='0.0.0.0', port=8080 )
