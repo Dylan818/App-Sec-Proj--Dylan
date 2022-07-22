@@ -3,6 +3,7 @@ from flask_session import Session
 from flask import Flask, render_template, redirect, request, session, jsonify
 from datetime import datetime
 import hashlib as hl
+import re
 app = Flask(__name__)
 
 
@@ -184,23 +185,44 @@ def new():
     return render_template("new.html")
 
 
-def validate_input(string):
-    unallowed_inputs = ["SELECT","UNION","JOIN","DROP","FROM","WHERE","AND","""'""","-",".",";",":",""""""]
-    if string.isalnum() and string not in unallowed_inputs:
-        return True
-    return False
+def validate_username(user_input):
+    pattern = r"\d|[a-z]|[A-Z]"
+    if re.search(pattern, user_input):
+        x = re.findall(pattern, user_input)
+        print(x)
+        if len(x) == len(user_input):
+            print("h1")
+            return True
+        else:
+            return False
 
+    else:
+        print("Not found")
+        return False
+
+
+def validate_password(user_input):
+    pattern = "\d|[a-z]|[A-Z][!@#$]"
+    if re.search(pattern, user_input):
+        x = re.findall(pattern, user_input)
+        if len(x) == len(user_input):
+            print("h1")
+            return True
+        else:
+            return False
+    else:
+        print("Not found")
+        return False
 
 @app.route("/logged/", methods=["POST"] )
 def logged():
     user = request.form["username"].lower()
     pwd = hashing_pwsd(request.form["password"])
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
-    if user == "" or pwd == "" or validate_input(user) is False or validate_input(pwd) is False:
-        return render_template ( "login.html" )
+    if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
+        return render_template ( "login.html", msg="Wrong username or password." )
 
     rows = db.execute(request_query, username = user, password = pwd)
-    print("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
     if len(rows) == 1:
         session['user'] = user
         session['time'] = datetime.now( )
@@ -241,17 +263,24 @@ def hashing_pwsd(pwsd):
 
 @app.route("/register/", methods=["POST"] )
 def registration():
-    username = request.form["username"]
-    password = hashing_pwsd(request.form["password"])
-    confirm = request.form["confirm"]
+    username = str(request.form["username"])
+    password = str(hashing_pwsd(request.form["password"]))
+    confirm = hashing_pwsd(request.form["confirm"])
     fname = request.form["fname"]
     lname = request.form["lname"]
     email = request.form["email"]
-    rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
-    if len( rows ) > 0:
-        return render_template ( "new.html", msg="Username already exists!" )
-    new = db.execute ( "INSERT INTO users (username, password, fname, lname, email) VALUES (:username, :password, :fname, :lname, :email)",
-                    username=username, password=password, fname=fname, lname=lname, email=email )
+    if password == confirm:
+        if validate_username(username) is False:
+            return render_template ( "new.html", msg="Invalid username!")
+        elif validate_password(request.form["password"]) is False:
+            return render_template ( "new.html", msg="Invalid password!" )
+        rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
+        if len( rows ) > 0:
+            return render_template ( "new.html", msg="Username already exists!" )
+        new = db.execute ( "INSERT INTO users (username, password, fname, lname, email) VALUES (:username, :password, :fname, :lname, :email)",
+                        username=username, password=password, fname=fname, lname=lname, email=email )
+    else:
+        return render_template ( "new.html", msg="Password must Match!")
     return render_template ( "login.html" )
 
 

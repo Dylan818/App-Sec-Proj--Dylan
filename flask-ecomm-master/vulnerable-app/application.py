@@ -11,7 +11,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Creates a connection to the database
-db = SQL ( "sqlite:///data.db" )
+db = SQL ( "sqlite:///data(v).db" )
 
 @app.route("/")
 def index():
@@ -193,16 +193,14 @@ def logged():
     # Get log in info from log in form
     user = request.form["username"].lower()
     pwd = request.form["password"]
-    #pwd = str(sha1(request.form["password"].encode('utf-8')).hexdigest())
-    # Make sure form input is not blank and re-render log in page if blank
     if user == "" or pwd == "":
         return render_template ( "login.html" )
     # Find out if info in form matches a record in user database
-    query = "SELECT * FROM users WHERE username = :user AND password = :pwd"
-    rows = db.execute("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
-    print("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
-    # If username and password match a record in database, set session variables
-    if len(rows) ==1:
+    query = "SELECT * FROM users WHERE username = '{user}' AND password = '{pwd}'"
+    rows = db.execute("""SELECT * FROM users WHERE username = '{}' AND password = '{}'""".format(user, pwd))
+    print(1)
+    print(rows)
+    if len(rows) >= 1:
         session['user'] = user
         session['time'] = datetime.now( )
         session['uid'] = rows[0]["id"]
