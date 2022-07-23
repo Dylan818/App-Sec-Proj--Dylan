@@ -13,7 +13,7 @@
         <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
         <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
 
-        <title>Soccer Jersey Store - Register</title>
+        <title>Soccer Jersey Store - Admin</title>
     </head>
     <body>
         <header>
@@ -27,18 +27,22 @@
             <div class="container">
                 <div class="row">
                     <div class="col-sm">
-                        <h2>Register</h2>
+                        <table class = "table">
+                            <tr>
+                                <th>Username</th>
+                                <th>Password</th>
+                                <th>Email</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                            </tr>
+                            {% for i in rows %}
+                            <tr>
+                                <td>{{i["username"]}}</td>
+                                <td>{{i["password"]}}</td>
 
-                        <form action="/register/" class="form" method="post">
-                            <input type="text" name="username" id="username" placeholder="Username" autofocus required ><br /><br />
-                            <input type="password" name="password" id="password" placeholder="Password" required><br /><br />
-                            <input type="password" name="confirm" id="confirm" placeholder="Confirm Password" required><br /><br />
-                            <input type="text" name="fname" id="fname" placeholder="First Name" required><br /><br />
-                            <input type="text" name="lname" id="lname" placeholder="Last Name" required><br /><br />
-                            <input type="email" name="email" id="email" placeholder="Email" required><br /><br /><br />
-                            <button type="reset" class="btn btn-secondary">Clear</button>
-                            <button type="submit" id="submit" class="btn btn-primary">Register</button>
-                        </form>
+                            </tr>
+                            {% endfor %}
+                        </table>
                     </div>
                 </div>
             </div>

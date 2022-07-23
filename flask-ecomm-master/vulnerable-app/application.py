@@ -2,6 +2,9 @@ from cs50 import SQL
 from flask_session import Session
 from flask import Flask, render_template, redirect, request, session, jsonify
 from datetime import datetime
+from flask import url_for, send_from_directory
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 
@@ -12,6 +15,13 @@ Session(app)
 
 # Creates a connection to the database
 db = SQL ( "sqlite:///data(v).db" )
+
+
+UPLOAD_FOLDER = './files'
+ALLOWED_EXTENSIONS = set(['pdf','png','jpg','svg','swf','jpeg','gif'])
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
 
 @app.route("/")
 def index():
@@ -251,20 +261,9 @@ def registration():
 
 @app.route("/admin/", methods=["POST"] )
 def registrationa():
-    # Get info from form
-    username = request.form["username"]
-    password = request.form["password"]
-    confirm = request.form["confirm"]
-    fname = request.form["fname"]
-    lname = request.form["lname"]
-    email = request.form["email"]
-    rows = db.execute("SELECT * FROM users WHERE username = :username ", username=username)
-    if len( rows ) > 0:
-        return render_template ( "login.html" )
-    new = db.execute ( "INSERT OVERWRITE users (username, password, fname, lname, email) VALUES (:username, :password, :fname, :lname, :email)",
-                    username=username, password=password, fname=fname, lname=lname, email=email )
-    # Render login template
-    return render_template ( "login.html", username=username, password=password, fname=fname, lname=lname, email=email )
+
+    rows = db.execute("SELECT * FROM users")
+    return render_template ( "admin.html", rows = rows)
 
 @app.route("/cart/")
 def cart():
@@ -281,6 +280,29 @@ def cart():
     # Render shopping cart
     return render_template("cart.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session)
 
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.',1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        file = request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'],filename))
+            return redirect(url_for('uploaded_file',filename=filename))
+
+    return '''
+    <form method=post enctype=multipart.form-data>
+      <input type=file name=file>
+      <input type=submit value=Upload>
+    </form>
+    '''
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'],filename)
 
 # @app.errorhandler(404)
 # def pageNotFound( e ):
