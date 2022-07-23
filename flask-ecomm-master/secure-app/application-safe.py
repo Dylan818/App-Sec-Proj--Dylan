@@ -1,3 +1,5 @@
+import uuid
+
 from cs50 import SQL
 from flask_session import Session
 from flask import Flask, render_template, redirect, request, session, jsonify
@@ -13,6 +15,22 @@ Session(app)
 
 # Creates a connection to the database
 db = SQL ( "sqlite:///data.db" )
+
+
+@app.route("/webapi/getdetails/", methods=['GET'])
+def get_details():
+    if 'user' in session:
+        uid = session['uid']
+        query = "SELECT * FROM users WHERE id = '{}'".format(uid)
+        details = db.execute(query)
+        username = details[0]["username"]
+        email = details[0]["email"]
+        fname = details[0]["fname"]
+        lname = details[0]["lname"]
+        print(email)
+        return render_template("getdetails.html",email=email, username=username, fname=fname, lname=lname)
+    return redirect("/")
+
 
 @app.route("/")
 def index():
@@ -227,6 +245,7 @@ def logged():
         session['user'] = user
         session['time'] = datetime.now( )
         session['uid'] = rows[0]["id"]
+        print(session['uid'])
     # Redirect to Home Page
     if 'user' in session:
         return redirect ( "/" )
@@ -269,6 +288,7 @@ def registration():
     fname = request.form["fname"]
     lname = request.form["lname"]
     email = request.form["email"]
+    #uid = str(uuid.uuid4())
     if password == confirm:
         if validate_username(username) is False:
             return render_template ( "new.html", msg="Invalid username!")
@@ -277,7 +297,7 @@ def registration():
         rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
         if len( rows ) > 0:
             return render_template ( "new.html", msg="Username already exists!" )
-        new = db.execute ( "INSERT INTO users (username, password, fname, lname, email) VALUES (:username, :password, :fname, :lname, :email)",
+        new = db.execute ( "INSERT INTO users (id, username, password, fname, lname, email) VALUES (:username, :password, :fname, :lname, :email)",
                         username=username, password=password, fname=fname, lname=lname, email=email )
     else:
         return render_template ( "new.html", msg="Password must Match!")
