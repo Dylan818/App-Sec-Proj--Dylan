@@ -242,7 +242,7 @@ def validate_password(user_input):
         return False
 
 
-@app.route("/logged/api", methods=["POST"] )
+@app.route("/loggedapi/", methods=["POST"] )
 def loggedapi():
     if request.is_json:
         user = request.json["username"]
@@ -279,11 +279,12 @@ def logged():
         session['user'] = user
         session['time'] = datetime.now( )
         session['uid'] = rows[0]["uid"]
+        access_token = create_access_token(identity=session['uid'])
+        session['token'] = access_token
         print(session['uid'])
     # Redirect to Home Page
     if 'user' in session:
-        access_token = create_access_token(identity=session['uid'])
-        return redirect ( "/" ), jsonify(message="logged", access_token=access_token)
+        return redirect ( "/" )
     # If username is not in the database return the log in page
     return render_template ( "login.html", msg="Wrong username or password." )
 
