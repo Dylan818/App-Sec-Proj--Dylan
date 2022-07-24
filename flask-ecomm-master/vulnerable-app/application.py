@@ -22,7 +22,7 @@ ALLOWED_EXTENSIONS = set(['pdf','png','jpg','svg','swf','jpeg','gif'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-
+state = db.execute("ALTER TABLE users DROP COLUMN id;")
 @app.route("/")
 def index():
     shirts = db.execute("SELECT * FROM shirts ORDER BY team ASC")

@@ -11,17 +11,20 @@ app = Flask(__name__)
 
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
+app.config['SECRET_KEY'] = "2917dedc-f90d-4375-9beb-70e4814b1ced"
 Session(app)
 
 # Creates a connection to the database
 db = SQL ( "sqlite:///data.db" )
 
+#state = db.execute("DROP TABLE users")
+#state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40));")
 
 @app.route("/webapi/getdetails/", methods=['GET'])
 def get_details():
     if 'user' in session:
         uid = session['uid']
-        query = "SELECT * FROM users WHERE id = '{}'".format(uid)
+        query = "SELECT * FROM users WHERE uid = '{}'".format(uid)
         details = db.execute(query)
         username = details[0]["username"]
         email = details[0]["email"]
@@ -244,7 +247,7 @@ def logged():
     if len(rows) == 1:
         session['user'] = user
         session['time'] = datetime.now( )
-        session['uid'] = rows[0]["id"]
+        session['uid'] = rows[0]["uid"]
         print(session['uid'])
     # Redirect to Home Page
     if 'user' in session:
@@ -288,7 +291,7 @@ def registration():
     fname = request.form["fname"]
     lname = request.form["lname"]
     email = request.form["email"]
-    #uid = str(uuid.uuid4())
+    uid = str(uuid.uuid4())
     if password == confirm:
         if validate_username(username) is False:
             return render_template ( "new.html", msg="Invalid username!")
@@ -297,8 +300,8 @@ def registration():
         rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
         if len( rows ) > 0:
             return render_template ( "new.html", msg="Username already exists!" )
-        new = db.execute ( "INSERT INTO users (id, username, password, fname, lname, email) VALUES (:username, :password, :fname, :lname, :email)",
-                        username=username, password=password, fname=fname, lname=lname, email=email )
+        new = db.execute ( "INSERT INTO users (uid, username, password, fname, lname, email) VALUES (:uid, :username, :password, :fname, :lname, :email)",
+                        uid = uid, username=username, password=password, fname=fname, lname=lname, email=email )
     else:
         return render_template ( "new.html", msg="Password must Match!")
     return render_template ( "login.html" )
