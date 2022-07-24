@@ -1,3 +1,4 @@
 import uuid
 
-print(uuid.uuid4())
+x = uuid.uuid4()
+print(x)

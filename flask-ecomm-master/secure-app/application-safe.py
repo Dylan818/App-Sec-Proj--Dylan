@@ -6,34 +6,40 @@ from flask import Flask, render_template, redirect, request, session, jsonify
 from datetime import datetime
 import hashlib as hl
 import re
+from flask_marshmallow import Marshmallow
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 app = Flask(__name__)
 
 
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 app.config['SECRET_KEY'] = "2917dedc-f90d-4375-9beb-70e4814b1ced"
+app.config['JWT_SECRET_KEY'] = '57716098c68c4f02bba85bbf82359be3'
 Session(app)
-
+jwt = JWTManager(app)
+ma = Marshmallow(app)
 # Creates a connection to the database
 db = SQL ( "sqlite:///data.db" )
 
 #state = db.execute("DROP TABLE users")
 #state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40));")
 
-@app.route("/webapi/getdetails/", methods=['GET'])
+
+@app.route("/webapi/getdetails/", methods=['GET', 'POST'])
+@jwt_required()
 def get_details():
     if 'user' in session:
         uid = session['uid']
-        query = "SELECT * FROM users WHERE uid = '{}'".format(uid)
+        query = "SELECT username, email, fname, lname FROM users WHERE uid = '{}'".format(uid)
         details = db.execute(query)
-        username = details[0]["username"]
-        email = details[0]["email"]
-        fname = details[0]["fname"]
-        lname = details[0]["lname"]
-        print(email)
-        return render_template("getdetails.html",email=email, username=username, fname=fname, lname=lname)
-    return redirect("/")
+        return jsonify(details)
+    return jsonify(message="Not authorised!")
 
+
+class Userdetails(ma.Schema):
+   class Meta:
+       fields = ('uid','username','password','fname','lname','email')
+userdetails_schema = Userdetails()
 
 @app.route("/")
 def index():
@@ -235,6 +241,31 @@ def validate_password(user_input):
         print("Not found")
         return False
 
+
+@app.route("/logged/api", methods=["POST"] )
+def loggedapi():
+    if request.is_json:
+        user = request.json["username"]
+        pwd = hashing_pwsd(request.json["password"])
+    else:
+        user= request.form['username']
+        pwd = hashing_pwsd(request.form['password'])
+    request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
+    if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
+        return render_template ( "login.html", msg="Wrong username or password." )
+
+    rows = db.execute(request_query, username = user, password = pwd)
+    if len(rows) == 1:
+        session['user'] = user
+        session['time'] = datetime.now( )
+        session['uid'] = rows[0]["uid"]
+        print(session['uid'])
+    if 'user' in session:
+        access_token = create_access_token(identity=session['uid'])
+        return jsonify(message="logged", access_token = access_token)
+    return jsonify(message="Invalid login!")
+
+
 @app.route("/logged/", methods=["POST"] )
 def logged():
     user = request.form["username"].lower()
@@ -251,7 +282,8 @@ def logged():
         print(session['uid'])
     # Redirect to Home Page
     if 'user' in session:
-        return redirect ( "/" )
+        access_token = create_access_token(identity=session['uid'])
+        return redirect ( "/" ), jsonify(message="logged", access_token=access_token)
     # If username is not in the database return the log in page
     return render_template ( "login.html", msg="Wrong username or password." )
 
