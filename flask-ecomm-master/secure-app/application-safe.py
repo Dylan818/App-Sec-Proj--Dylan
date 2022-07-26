@@ -5,14 +5,16 @@ from datetime import datetime
 import hashlib as hl
 app = Flask(__name__)
 
-
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
+
 Session(app)
 
 # Creates a connection to the database
 db = SQL ( "sqlite:///data.db" )
-
+#db.execute("CREATE TABLE admin(admin_id INT PRIMARY KEY, username VARCHAR(20), password VARCHAR(20), fname VARCHAR(10), lname VARCHAR(10), email VARCHAR(20))")
+#db.execute("INSERT INTO admin VALUES('1', 'Admin', 'Admin123', 'Admin', 'Admin', 'admin@gmail.com');")
+print(db.execute('SELECT * FROM users'))
 @app.route("/")
 def index():
     shirts = db.execute("SELECT * FROM shirts ORDER BY team ASC")
@@ -199,6 +201,7 @@ def logged():
     if user == "" or pwd == "" or validate_input(user) is False or validate_input(pwd) is False:
         return render_template ( "login.html" )
 
+
     rows = db.execute(request_query, username = user, password = pwd)
     print("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
     if len(rows) == 1:
@@ -250,7 +253,7 @@ def registration():
     rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
     if len( rows ) > 0:
         return render_template ( "new.html", msg="Username already exists!" )
-    new = db.execute ( "INSERT INTO users (username, password, fname, lname, email) VALUES (:username, :password, :fname, :lname, :email)",
+    new = db.execute ( "INSERT INTO users (username, password, fname, lname, email, Admin) VALUES (:username, :password, :fname, :lname, :email, 'No')",
                     username=username, password=password, fname=fname, lname=lname, email=email )
     return render_template ( "login.html" )
 
@@ -277,6 +280,24 @@ def cart():
 #         return render_template ( "404.html", session=session )
 #     return render_template ( "404.html" ), 404
 
+@app.route("/adregister/", methods=["POST"] )
+def adregistration():
+    username = request.form["username"]
+    password = hashing_pwsd(request.form["password"])
+    confirm = request.form["confirm"]
+    fname = request.form["fname"]
+    lname = request.form["lname"]
+    email = request.form["email"]
+    rows = db.execute( "SELECT * FROM admin WHERE username = :username ", username = username )
+    if len( rows ) > 0:
+        return render_template ( "adergister.html", msg="Username already exists!" )
+    rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
+    if len( rows ) > 0:
+        return render_template ( "adregister.html", msg="Username already exists!" )
+
+    new = db.execute ( "INSERT INTO users (username, password, fname, lname, email, Admin) VALUES (:username, :password, :fname, :lname, :email, 'Yes')",
+                    username=username, password=password, fname=fname, lname=lname, email=email )
+    return render_template ( "login.html" )
 
 if __name__ == "__main__":
    app.run( host='0.0.0.0', port=8080 )
