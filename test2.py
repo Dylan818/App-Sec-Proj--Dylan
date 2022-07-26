@@ -1,3 +1,4 @@
-def test():
-    print("test")
-test()
+import uuid
+
+x = uuid.uuid4()
+print(x)

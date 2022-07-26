@@ -1,20 +1,46 @@
+import uuid
+
 from cs50 import SQL
 from flask_session import Session
 from flask import Flask, render_template, redirect, request, session, jsonify
 from datetime import datetime
 import hashlib as hl
+import re
+from flask_marshmallow import Marshmallow
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 app = Flask(__name__)
+
 
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
-
+app.config['SECRET_KEY'] = "2917dedc-f90d-4375-9beb-70e4814b1ced"
+app.config['JWT_SECRET_KEY'] = '57716098c68c4f02bba85bbf82359be3'
 Session(app)
-
+jwt = JWTManager(app)
+ma = Marshmallow(app)
 # Creates a connection to the database
 db = SQL ( "sqlite:///data.db" )
-#db.execute("CREATE TABLE admin(admin_id INT PRIMARY KEY, username VARCHAR(20), password VARCHAR(20), fname VARCHAR(10), lname VARCHAR(10), email VARCHAR(20))")
-#db.execute("INSERT INTO admin VALUES('1', 'Admin', 'Admin123', 'Admin', 'Admin', 'admin@gmail.com');")
-print(db.execute('SELECT * FROM users'))
+
+#state = db.execute("DROP TABLE users")
+#state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40));")
+
+
+@app.route("/webapi/getdetails/", methods=['GET', 'POST'])
+@jwt_required()
+def get_details():
+    if 'user' in session:
+        uid = session['uid']
+        query = "SELECT username, email, fname, lname FROM users WHERE uid = '{}'".format(uid)
+        details = db.execute(query)
+        return jsonify(details)
+    return jsonify(message="Not authorised!")
+
+
+class Userdetails(ma.Schema):
+   class Meta:
+       fields = ('uid','username','password','fname','lname','email')
+userdetails_schema = Userdetails()
+
 @app.route("/")
 def index():
     shirts = db.execute("SELECT * FROM shirts ORDER BY team ASC")
@@ -186,11 +212,58 @@ def new():
     return render_template("new.html")
 
 
-def validate_input(string):
-    unallowed_inputs = ["SELECT","UNION","JOIN","DROP","FROM","WHERE","AND","""'""","-",".",";",":",""""""]
-    if string.isalnum() and string not in unallowed_inputs:
-        return True
-    return False
+def validate_username(user_input):
+    pattern = r"\d|[a-z]|[A-Z]"
+    if re.search(pattern, user_input):
+        x = re.findall(pattern, user_input)
+        print(x)
+        if len(x) == len(user_input):
+            print("h1")
+            return True
+        else:
+            return False
+
+    else:
+        print("Not found")
+        return False
+
+
+def validate_password(user_input):
+    pattern = "\d|[a-z]|[A-Z][!@#$]"
+    if re.search(pattern, user_input):
+        x = re.findall(pattern, user_input)
+        if len(x) == len(user_input):
+            print("h1")
+            return True
+        else:
+            return False
+    else:
+        print("Not found")
+        return False
+
+
+@app.route("/loggedapi/", methods=["POST"] )
+def loggedapi():
+    if request.is_json:
+        user = request.json["username"]
+        pwd = hashing_pwsd(request.json["password"])
+    else:
+        user= request.form['username']
+        pwd = hashing_pwsd(request.form['password'])
+    request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
+    if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
+        return render_template ( "login.html", msg="Wrong username or password." )
+
+    rows = db.execute(request_query, username = user, password = pwd)
+    if len(rows) == 1:
+        session['user'] = user
+        session['time'] = datetime.now( )
+        session['uid'] = rows[0]["uid"]
+        print(session['uid'])
+    if 'user' in session:
+        access_token = create_access_token(identity=session['uid'])
+        return jsonify(message="logged", access_token = access_token)
+    return jsonify(message="Invalid login!")
 
 
 @app.route("/logged/", methods=["POST"] )
@@ -198,16 +271,17 @@ def logged():
     user = request.form["username"].lower()
     pwd = hashing_pwsd(request.form["password"])
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
-    if user == "" or pwd == "" or validate_input(user) is False or validate_input(pwd) is False:
-        return render_template ( "login.html" )
-
+    if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
+        return render_template ( "login.html", msg="Wrong username or password." )
 
     rows = db.execute(request_query, username = user, password = pwd)
-    print("""SELECT * FROM users WHERE username = '%s' AND password = '%s'""" %(user, pwd))
     if len(rows) == 1:
         session['user'] = user
         session['time'] = datetime.now( )
-        session['uid'] = rows[0]["id"]
+        session['uid'] = rows[0]["uid"]
+        access_token = create_access_token(identity=session['uid'])
+        session['token'] = access_token
+        print(session['uid'])
     # Redirect to Home Page
     if 'user' in session:
         return redirect ( "/" )
@@ -244,17 +318,25 @@ def hashing_pwsd(pwsd):
 
 @app.route("/register/", methods=["POST"] )
 def registration():
-    username = request.form["username"]
-    password = hashing_pwsd(request.form["password"])
-    confirm = request.form["confirm"]
+    username = str(request.form["username"])
+    password = str(hashing_pwsd(request.form["password"]))
+    confirm = hashing_pwsd(request.form["confirm"])
     fname = request.form["fname"]
     lname = request.form["lname"]
     email = request.form["email"]
-    rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
-    if len( rows ) > 0:
-        return render_template ( "new.html", msg="Username already exists!" )
-    new = db.execute ( "INSERT INTO users (username, password, fname, lname, email, Admin) VALUES (:username, :password, :fname, :lname, :email, 'No')",
-                    username=username, password=password, fname=fname, lname=lname, email=email )
+    uid = str(uuid.uuid4())
+    if password == confirm:
+        if validate_username(username) is False:
+            return render_template ( "new.html", msg="Invalid username!")
+        elif validate_password(request.form["password"]) is False:
+            return render_template ( "new.html", msg="Invalid password!" )
+        rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
+        if len( rows ) > 0:
+            return render_template ( "new.html", msg="Username already exists!" )
+        new = db.execute ( "INSERT INTO users (uid, username, password, fname, lname, email) VALUES (:uid, :username, :password, :fname, :lname, :email)",
+                        uid = uid, username=username, password=password, fname=fname, lname=lname, email=email )
+    else:
+        return render_template ( "new.html", msg="Password must Match!")
     return render_template ( "login.html" )
 
 
@@ -280,24 +362,10 @@ def cart():
 #         return render_template ( "404.html", session=session )
 #     return render_template ( "404.html" ), 404
 
-@app.route("/adregister/", methods=["POST"] )
-def adregistration():
-    username = request.form["username"]
-    password = hashing_pwsd(request.form["password"])
-    confirm = request.form["confirm"]
-    fname = request.form["fname"]
-    lname = request.form["lname"]
-    email = request.form["email"]
-    rows = db.execute( "SELECT * FROM admin WHERE username = :username ", username = username )
-    if len( rows ) > 0:
-        return render_template ( "adergister.html", msg="Username already exists!" )
-    rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
-    if len( rows ) > 0:
-        return render_template ( "adregister.html", msg="Username already exists!" )
-
-    new = db.execute ( "INSERT INTO users (username, password, fname, lname, email, Admin) VALUES (:username, :password, :fname, :lname, :email, 'Yes')",
-                    username=username, password=password, fname=fname, lname=lname, email=email )
-    return render_template ( "login.html" )
+def show_sql():
+    rows = db.execute("SELECT * from USERS")
+    print(rows)
 
 if __name__ == "__main__":
+   show_sql()
    app.run( host='0.0.0.0', port=8080 )

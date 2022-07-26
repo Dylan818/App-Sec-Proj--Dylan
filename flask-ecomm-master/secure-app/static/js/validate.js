@@ -27,11 +27,11 @@ function validate ( )
     SUBMIT.hide();
 
     // This currently checks to see if the username is
-    // present and if it is at least 5 characters in length.
-    if ( !USERNAME.val() || USERNAME.val().length < 5  )
+    // present and if it is at least 10 characters in length.
+    if ( !USERNAME.val() || USERNAME.val().length < 10 )
     {
         // Show an invalid input message
-        USERNAME_MSG.html( "Username must be 5 characters or more" );
+        USERNAME_MSG.html( "Username must be 10 characters or more" );
         USERNAME_MSG.show();
         // Indicate the type of bad input in the console.
         console.log( "Bad username" );
@@ -48,9 +48,9 @@ function validate ( )
         valid = false;
     }
 
-    if ( !PASSWORD.val() || PASSWORD.val().length < 8 )
+    if ( !PASSWORD.val() || PASSWORD.val().length < 12 )
     {
-        PASSWORD_MSG.html("Password needs to be at least 8 characters long");
+        PASSWORD_MSG.html("Password needs to be at least 12 characters long");
         PASSWORD_MSG.show();
         valid = false;
     }
