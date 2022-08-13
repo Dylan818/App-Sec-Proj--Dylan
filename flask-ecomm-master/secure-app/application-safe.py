@@ -8,19 +8,45 @@ import hashlib as hl
 import re
 from flask_marshmallow import Marshmallow
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+
+
 app = Flask(__name__)
-
-
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 app.config['SECRET_KEY'] = "2917dedc-f90d-4375-9beb-70e4814b1ced"
 app.config['JWT_SECRET_KEY'] = '57716098c68c4f02bba85bbf82359be3'
 Session(app)
 jwt = JWTManager(app)
-ma = Marshmallow(app)
 # Creates a connection to the database
 db = SQL ( "sqlite:///data.db" )
+iv = b'K?55\x08\xdf9\xb38|\x10\x9fe\xfbX\xd6'
 
+def get_key():
+    return b'\xc2*\xe2\xaf\xd0\x1f0rgd\x11D\x15iX\x7f#\x92\xb3\xee\x00\xb3\x85\xdb\x8e\xc7\xf2E\xbb\xef\xda\xfa'
+
+def encrypt(key, plaintext):
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    ciphertext = cipher.encrypt(pad(plaintext, 16, style="pkcs7"))
+    return ciphertext
+
+def decrypt(key, ciphertext):
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    plaintext = unpad(cipher.decrypt(ciphertext), 16, style="pkcs7")
+    return plaintext.decode('utf-8')
+
+def e_test():
+    msg = "Hello world"
+    print(msg)
+    emsg = encrypt(get_key(), msg.encode('utf-8'))
+    print(emsg)
+
+def d_test():
+    msg = "Hello World"
+    print(msg)
+    emsg = encrypt(get_key(), msg.encode('utf-8'))
+    print(decrypt(get_key(), emsg), "decrypted")
 #state = db.execute("DROP TABLE users")
 #state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40));")
 
@@ -32,14 +58,11 @@ def get_details():
         uid = session['uid']
         query = "SELECT username, email, fname, lname FROM users WHERE uid = '{}'".format(uid)
         details = db.execute(query)
+        details[0]["email"] = decrypt(get_key(), details[0]["email"])
+        details[0]["username"] = decrypt(get_key(), details[0]["username"])
         return jsonify(details)
     return jsonify(message="Not authorised!")
 
-
-class Userdetails(ma.Schema):
-   class Meta:
-       fields = ('uid','username','password','fname','lname','email')
-userdetails_schema = Userdetails()
 
 @app.route("/")
 def index():
@@ -181,24 +204,18 @@ def checkout():
     return redirect('/')
 
 
-@app.route("/remove/", methods=["GET"])
-def remove():
-    # Get the id of shirt selected to be removed
-    out = int(request.args.get("id"))
-    # Remove shirt from shopping cart
-    db.execute("DELETE from cart WHERE id=:id", id=out)
-    # Initialize shopping cart variables
-    totItems, total, display = 0, 0, 0
-    # Rebuild shopping cart
+@app.route("/removefromcart/", methods=["GET"])
+def removefromcart():
+    removed = int(request.args.get("id"))
+    db.execute("DELETE from cart WHERE id=:id", id=removed)
+    totalItems= 0
+    total=0
     shoppingCart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
-    shopLen = len(shoppingCart)
-    for i in range(shopLen):
+    shop = len(shoppingCart)
+    for i in range(shop):
         total += shoppingCart[i]["SUM(subTotal)"]
-        totItems += shoppingCart[i]["SUM(qty)"]
-    # Turn on "remove success" flag
-    display = 1
-    # Render shopping cart
-    return render_template ("cart.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session )
+        totalItems += shoppingCart[i]["SUM(qty)"]
+    return render_template ("cart.html", shoppingCart=shoppingCart, shopLen=shop, total=total, totItems=totalItems,  session=session)
 
 
 @app.route("/login/", methods=["GET"])
@@ -253,7 +270,7 @@ def loggedapi():
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
     if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
         return render_template ( "login.html", msg="Wrong username or password." )
-
+    user = encrypt(get_key(), user.encode('utf-8'))
     rows = db.execute(request_query, username = user, password = pwd)
     if len(rows) == 1:
         session['user'] = user
@@ -273,7 +290,7 @@ def logged():
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
     if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
         return render_template ( "login.html", msg="Wrong username or password." )
-
+    user = encrypt(get_key(), user.encode('utf-8'))
     rows = db.execute(request_query, username = user, password = pwd)
     if len(rows) == 1:
         session['user'] = user
@@ -318,7 +335,7 @@ def hashing_pwsd(pwsd):
 
 @app.route("/register/", methods=["POST"] )
 def registration():
-    username = str(request.form["username"])
+    username = str(request.form["username"]).lower()
     password = str(hashing_pwsd(request.form["password"]))
     confirm = hashing_pwsd(request.form["confirm"])
     fname = request.form["fname"]
@@ -333,7 +350,9 @@ def registration():
         rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
         if len( rows ) > 0:
             return render_template ( "new.html", msg="Username already exists!" )
-        new = db.execute ( "INSERT INTO users (uid, username, password, fname, lname, email) VALUES (:uid, :username, :password, :fname, :lname, :email)",
+        email = encrypt(get_key(), email.encode('utf-8'))
+        username = encrypt(get_key(), username.encode('utf-8'))
+        db.execute ( "INSERT INTO users (uid, username, password, fname, lname, email) VALUES (:uid, :username, :password, :fname, :lname, :email)",
                         uid = uid, username=username, password=password, fname=fname, lname=lname, email=email )
     else:
         return render_template ( "new.html", msg="Password must Match!")
@@ -364,8 +383,12 @@ def cart():
 
 def show_sql():
     rows = db.execute("SELECT * from USERS")
+    rows_shirt = db.execute("SELECT * FROM SHIRTS")
     print(rows)
+    print(rows_shirt)
 
 if __name__ == "__main__":
+   e_test()
+   d_test()
    show_sql()
    app.run( host='0.0.0.0', port=8080 )

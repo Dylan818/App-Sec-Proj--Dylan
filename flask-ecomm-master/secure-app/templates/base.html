@@ -50,7 +50,7 @@
                     {% for i in range(shopLen) %}
                       <tr>
                         <th scope="row">{{ i + 1 }}</th>
-                        <td><img src="/static/img/{{ shoppingCart[i]["image"] }}" width="30px" alt="{{ shoppingCart[i]["team"] }}" /></td>
+                        <td><img src="/static/img/{{ shoppingCart[i]['image'] }}" width="30px" alt="{{ shoppingCart[i]['team'] }}" /></td>
                         <td>{{ shoppingCart[i]["team"] }}</td>
                         <td>{{ shoppingCart[i]['SUM(qty)'] }}</td>
                         <td>{{ '${:,.2f}'.format(shoppingCart[i]["price"]) }}</td>
