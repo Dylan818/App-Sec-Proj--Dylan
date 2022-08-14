@@ -37,10 +37,10 @@ Soccer Jersey Store - Home
                     {% for i in range(shopLen) %}
                       <tr>
                         <th scope="row">{{ i + 1 }}</th>
-                        <td><img src="/static/img/{{ shoppingCart[i]["image"] }}" width="30px" alt="{{ shoppingCart[i]["team"] }}" /></td>
+                        <td><img src="/static/img/{{ shoppingCart[i]['image'] }}" width="30px" alt="{{ shoppingCart[i]['team'] }}" /></td>
                         <td>{{ shoppingCart[i]["team"] }}</td>
                         <td><form action="/update/">
-                            <input type="hidden" name="id" value="{{shoppingCart[i]["id"]}}" />
+                            <input type="hidden" name="id" value="{{shoppingCart[i]['id']}}" />
                             <input type="number" name="quantity" min="1" max="10" size="5" value="{{ shoppingCart[i]['SUM(qty)'] }}">
                             <button type="submit" class="btn btn-warning checkout">Update</button>
                           </form></td>
@@ -48,7 +48,7 @@ Soccer Jersey Store - Home
                         <td>{{ '${:,.2f}'.format(shoppingCart[i]['SUM(subTotal)']) }}</td>
                         <td>
                           <form action="/removefromcart/" methods="GET">
-                            <input type="hidden" name="id" value="{{ shoppingCart[i]["id"] }}" />
+                            <input type="hidden" name="id" value="{{ shoppingCart[i]['id'] }}" />
                             <button type="submit" class="btn btn-secondary btn-sm" id="removeFromCart">Remove</button>
                           </form>
                         </td>
@@ -59,7 +59,7 @@ Soccer Jersey Store - Home
                       <tr>
                         <td colSpan="7">Total: {{ '${:,.2f}'.format(total) }}<br /><br />
                           <div class="modal-footer">
-                            <a href="/"><button type="button" class="btn btn-primary checkout">Continue Shopping</button></a>
+                            <a href="/"><button type="button" class="btn btn-primary checkout">Back to shop</button></a>
                             <a href="/checkout/"><button type="button" class="btn btn-success checkout">Proceed to Checkout</button></a>
                           </div>
                         </td>
@@ -67,14 +67,14 @@ Soccer Jersey Store - Home
                     </tfoot>
                     {% else %}
                       <tr>
-                        <td colSpan="7"><h3>Your cart is empty :\</h3></td>
+                        <td colSpan="7"><h3>Your cart is currently empty :(</h3></td>
                       </tr>
                     </tbody>
                     <tfoot>
                       <tr>
-                        <td colSpan="7">Get some shirts now!<br />
+                        <td colSpan="7">Get some shoes now!<br />
                           <div>
-                            <a href="/"><button type="button" class="btn btn-secondary" data-dismiss="modal">Continue Shopping</button></a>
+                            <a href="/"><button type="button" class="btn btn-secondary" data-dismiss="modal">Back to shop</button></a>
                           </div>
                         </td>
                       </tr>

@@ -66,8 +66,8 @@ def get_details():
 
 @app.route("/")
 def index():
-    shirts = db.execute("SELECT * FROM shirts ORDER BY team ASC")
-    shirtsLen = len(shirts)
+    shoes = db.execute("SELECT * FROM shoes ORDER BY team ASC")
+    shoesLen = len(shoes)
     # Initialize variables
     cart = []
     shop = len(cart)
@@ -80,10 +80,10 @@ def index():
         for i in range(shop):
             total += cart[i]["SUM(subTotal)"]
             totalItems += cart[i]["SUM(qty)"]
-        shirts = db.execute("SELECT * FROM shirts ORDER BY team ASC")
-        shirtsLen = len(shirts)
-        return render_template ("index.html", shoppingCart=cart, shirts=shirts, shopLen=shopLen, shirtsLen=shirtsLen, total=total, totItems=totalItems, display=display, session=session )
-    return render_template ( "index.html", shirts=shirts, shoppingCart=cart, shirtsLen=shirtsLen, shopLen=shop, total=total, totItems=totalItems, display=display)
+        shoes = db.execute("SELECT * FROM shoes ORDER BY team ASC")
+        shoesLen = len(shoes)
+        return render_template ("index.html", shoppingCart=cart, shoes=shoes, shopLen=shopLen, shoesLen=shoesLen, total=total, totItems=totalItems, display=display, session=session )
+    return render_template ( "index.html", shoes=shoes, shoppingCart=cart, shoesLen=shoesLen, shopLen=shop, total=total, totItems=totalItems, display=display)
 
 
 @app.route("/buy/")
@@ -97,7 +97,7 @@ def buy():
     qty = int(request.args.get('quantity'))
     if session:
         id = int(request.args.get('id'))
-        items = db.execute("SELECT * FROM shirts WHERE id = :id", id=id)
+        items = db.execute("SELECT * FROM shoes WHERE id = :id", id=id)
         if(items[0]["onSale"] == 1):
             price = items[0]["onSalePrice"]
         else:
@@ -111,9 +111,9 @@ def buy():
         for i in range(shopcartlen):
             total += cart[i]["SUM(subTotal)"]
             totalItems += cart[i]["SUM(qty)"]
-        shirts = db.execute("SELECT * FROM shirts ORDER BY team ASC")
-        shirtsLen = len(shirts)
-        return render_template ("index.html", shoppingCart=cart, shirts=shirts, shopLen=shopcartlen, shirtsLen=shirtsLen, total=total, totItems=totalItems, display=display, session=session )
+        shoes = db.execute("SELECT * FROM shoes ORDER BY team ASC")
+        shoesLen = len(shoes)
+        return render_template ("index.html", shoppingCart=cart, shoes=shoes, shopLen=shopcartlen, shoesLen=shoesLen, total=total, totItems=totalItems, display=display, session=session )
 
 
 @app.route("/update/")
@@ -128,7 +128,7 @@ def update():
         id = int(request.args.get('id'))
         db.execute("DELETE FROM cart WHERE id = :id", id=id)
         # Select info of selected shirt from database
-        goods = db.execute("SELECT * FROM shirts WHERE id = :id", id=id)
+        goods = db.execute("SELECT * FROM shoes WHERE id = :id", id=id)
         # Extract values from selected shirt record
         # Check if shirt is on sale to determine price
         if(goods[0]["onSale"] == 1):
@@ -154,20 +154,20 @@ def update():
 def filter():
     if request.args.get('continent'):
         query = request.args.get('continent')
-        shirts = db.execute("SELECT * FROM shirts WHERE continent = :query ORDER BY team ASC", query=query )
+        shoes = db.execute("SELECT * FROM shoes WHERE continent = :query ORDER BY team ASC", query=query )
     if request.args.get('sale'):
         query = request.args.get('sale')
-        shirts = db.execute("SELECT * FROM shirts WHERE onSale = :query ORDER BY team ASC", query=query)
+        shoes = db.execute("SELECT * FROM shoes WHERE onSale = :query ORDER BY team ASC", query=query)
     if request.args.get('id'):
         query = int(request.args.get('id'))
-        shirts = db.execute("SELECT * FROM shirts WHERE id = :query ORDER BY team ASC", query=query)
+        shoes = db.execute("SELECT * FROM shoes WHERE id = :query ORDER BY team ASC", query=query)
     if request.args.get('kind'):
         query = request.args.get('kind')
-        shirts = db.execute("SELECT * FROM shirts WHERE kind = :query ORDER BY team ASC", query=query)
+        shoes = db.execute("SELECT * FROM shoes WHERE kind = :query ORDER BY team ASC", query=query)
     if request.args.get('price'):
         query = request.args.get('price')
-        shirts = db.execute("SELECT * FROM shirts ORDER BY onSalePrice ASC")
-    shirtsLen = len(shirts)
+        shoes = db.execute("SELECT * FROM shoes ORDER BY onSalePrice ASC")
+    shoesLen = len(shoes)
     # Initialize shopping cart variables
     shoppingCart = []
     shopLen = len(shoppingCart)
@@ -180,9 +180,9 @@ def filter():
             total += shoppingCart[i]["SUM(subTotal)"]
             totItems += shoppingCart[i]["SUM(qty)"]
         # Render filtered view
-        return render_template ("index.html", shoppingCart=shoppingCart, shirts=shirts, shopLen=shopLen, shirtsLen=shirtsLen, total=total, totItems=totItems, display=display, session=session )
+        return render_template ("index.html", shoppingCart=shoppingCart, shoes=shoes, shopLen=shopLen, shoesLen=shoesLen, total=total, totItems=totItems, display=display, session=session )
     # Render filtered view
-    return render_template ( "index.html", shirts=shirts, shoppingCart=shoppingCart, shirtsLen=shirtsLen, shopLen=shopLen, total=total, totItems=totItems, display=display)
+    return render_template ( "index.html", shoes=shoes, shoppingCart=shoppingCart, shoesLen=shoesLen, shopLen=shopLen, total=total, totItems=totItems, display=display)
 
 
 @app.route("/checkout/")
@@ -308,11 +308,11 @@ def history():
     shoppingCart = []
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
-    # Retrieve all shirts ever bought by current user
-    myShirts = db.execute("SELECT * FROM purchases WHERE uid=:uid", uid=session["uid"])
-    myShirtsLen = len(myShirts)
+    # Retrieve all shoes ever bought by current user
+    myshoes = db.execute("SELECT * FROM purchases WHERE uid=:uid", uid=session["uid"])
+    myshoesLen = len(myshoes)
     # Render table with shopping history of current user
-    return render_template("history.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session, myShirts=myShirts, myShirtsLen=myShirtsLen)
+    return render_template("history.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session, myshoes=myshoes, myshoesLen=myshoesLen)
 
 
 @app.route("/logout/")
@@ -379,12 +379,16 @@ def cart():
 
 def show_sql():
     rows = db.execute("SELECT * from USERS")
-    rows_shirt = db.execute("SELECT * FROM SHIRTS")
+    rows_shirt = db.execute("SELECT * FROM Shoes")
     print(rows)
     print(rows_shirt)
+
+def delete_shirts():
+    db.execute("DELETE FROM shoes WHERE team IN ('River Plate','Boca Juniors', 'FC Barcelona','Real Madrid', 'Juventus','Milan','Manchester City','Manchester United','Flamengo','Corinthians');")
 
 if __name__ == "__main__":
    e_test()
    d_test()
+   delete_shirts()
    show_sql()
    app.run( host='0.0.0.0', port=8080 )
