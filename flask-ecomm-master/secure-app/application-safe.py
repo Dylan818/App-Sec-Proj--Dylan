@@ -69,55 +69,51 @@ def index():
     shirts = db.execute("SELECT * FROM shirts ORDER BY team ASC")
     shirtsLen = len(shirts)
     # Initialize variables
-    shoppingCart = []
-    shopLen = len(shoppingCart)
-    totItems, total, display = 0, 0, 0
+    cart = []
+    shop = len(cart)
+    totalItems = 0
+    total = 0
+    display = 0
     if 'user' in session:
-        shoppingCart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
-        shopLen = len(shoppingCart)
-        for i in range(shopLen):
-            total += shoppingCart[i]["SUM(subTotal)"]
-            totItems += shoppingCart[i]["SUM(qty)"]
+        cart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
+        shopLen = len(cart)
+        for i in range(shop):
+            total += cart[i]["SUM(subTotal)"]
+            totalItems += cart[i]["SUM(qty)"]
         shirts = db.execute("SELECT * FROM shirts ORDER BY team ASC")
         shirtsLen = len(shirts)
-        return render_template ("index.html", shoppingCart=shoppingCart, shirts=shirts, shopLen=shopLen, shirtsLen=shirtsLen, total=total, totItems=totItems, display=display, session=session )
-    return render_template ( "index.html", shirts=shirts, shoppingCart=shoppingCart, shirtsLen=shirtsLen, shopLen=shopLen, total=total, totItems=totItems, display=display)
+        return render_template ("index.html", shoppingCart=cart, shirts=shirts, shopLen=shopLen, shirtsLen=shirtsLen, total=total, totItems=totalItems, display=display, session=session )
+    return render_template ( "index.html", shirts=shirts, shoppingCart=cart, shirtsLen=shirtsLen, shopLen=shop, total=total, totItems=totalItems, display=display)
 
 
 @app.route("/buy/")
 def buy():
     # Initialize shopping cart variables
-    shoppingCart = []
-    shopLen = len(shoppingCart)
-    totItems, total, display = 0, 0, 0
+    cart = []
+    shopcartlen = len(cart)
+    totalItems = 0
+    total = 0
+    display = 0
     qty = int(request.args.get('quantity'))
     if session:
-        # Store id of the selected shirt
         id = int(request.args.get('id'))
-        # Select info of selected shirt from database
-        goods = db.execute("SELECT * FROM shirts WHERE id = :id", id=id)
-        # Extract values from selected shirt record
-        # Check if shirt is on sale to determine price
-        if(goods[0]["onSale"] == 1):
-            price = goods[0]["onSalePrice"]
+        items = db.execute("SELECT * FROM shirts WHERE id = :id", id=id)
+        if(items[0]["onSale"] == 1):
+            price = items[0]["onSalePrice"]
         else:
-            price = goods[0]["price"]
-        team = goods[0]["team"]
-        image = goods[0]["image"]
+            price = items[0]["price"]
+        team = items[0]["team"]
+        image = items[0]["image"]
         subTotal = qty * price
-        # Insert selected shirt into shopping cart
         db.execute("INSERT INTO cart (id, qty, team, image, price, subTotal) VALUES (:id, :qty, :team, :image, :price, :subTotal)", id=id, qty=qty, team=team, image=image, price=price, subTotal=subTotal)
-        shoppingCart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
-        shopLen = len(shoppingCart)
-        # Rebuild shopping cart
-        for i in range(shopLen):
-            total += shoppingCart[i]["SUM(subTotal)"]
-            totItems += shoppingCart[i]["SUM(qty)"]
-        # Select all shirts for home page view
+        cart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
+        shopcartlen = len(cart)
+        for i in range(shopcartlen):
+            total += cart[i]["SUM(subTotal)"]
+            totalItems += cart[i]["SUM(qty)"]
         shirts = db.execute("SELECT * FROM shirts ORDER BY team ASC")
         shirtsLen = len(shirts)
-        # Go back to home page
-        return render_template ("index.html", shoppingCart=shoppingCart, shirts=shirts, shopLen=shopLen, shirtsLen=shirtsLen, total=total, totItems=totItems, display=display, session=session )
+        return render_template ("index.html", shoppingCart=cart, shirts=shirts, shopLen=shopcartlen, shirtsLen=shirtsLen, total=total, totItems=totalItems, display=display, session=session )
 
 
 @app.route("/update/")
