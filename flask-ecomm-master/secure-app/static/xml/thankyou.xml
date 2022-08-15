@@ -25,7 +25,7 @@
     <path d="M-20 20 A25 25 0 0 0 20 20"
       fill="white" stroke="black" stroke-width="3"/>
   </g>
-  <text x="-40" y="75">&custom_entity;!</text>
+  <text x="-40" y="75">&custom_entity;&lt;svg&gt;!</text>
   <script>
     <![CDATA[
       console.log("CDATA disables XML parsing: <svg>")
