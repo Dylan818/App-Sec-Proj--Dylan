@@ -11,6 +11,7 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
+from xml.dom.minidom import parse, parseString
 
 
 app = Flask(__name__)
@@ -178,7 +179,14 @@ def checkout():
     shoppingCart = []
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
-    return redirect('/')
+    return redirect('/thankyou')
+
+@app.route("/thankyou/")
+def thankyou():
+    document = parse("thankyou.svg")
+    with open("thankyou.svg") as file:
+        document = parse(file)
+        render_template('thankyou.html' , document=document)
 
 
 @app.route("/removefromcart/", methods=["GET"])
@@ -265,6 +273,7 @@ def logged():
     pwd = hashing_pwsd(request.form["password"])
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
     if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
+        
         return render_template ( "login.html", msg="Wrong username or password." )
     user = encrypt(get_key(), user.encode('utf-8'))
     rows = db.execute(request_query, username = user, password = pwd)
