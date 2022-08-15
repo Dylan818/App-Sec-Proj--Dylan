@@ -278,21 +278,41 @@ def logged():
     pwd = hashing_pwsd(request.form["password"])
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
     if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
-        
         return render_template ( "login.html", msg="Wrong username or password." )
     user = encrypt(get_key(), user.encode('utf-8'))
-    rows = db.execute(request_query, username = user, password = pwd)
-    if len(rows) == 1:
-        session['user'] = user
-        session['time'] = datetime.now( )
-        session['uid'] = rows[0]["uid"]
-        access_token = create_access_token(identity=session['uid'])
-        session['token'] = access_token
-        print(session['uid'])
-    if 'user' in session:
-        return redirect ( "/" )
-    return render_template ( "login.html", msg="Wrong username or password." )
-
+    try:
+        attempts = db.execute("SELECT loginattempts FROM attempts WHERE users = user", user= user)
+    except:
+        attempts = 1
+    if attempts > 0:
+        rows = db.execute(request_query, username = user, password = pwd)
+        if len(rows) == 1:
+            session['user'] = user
+            session['time'] = datetime.now( )
+            session['uid'] = rows[0]["uid"]
+            access_token = create_access_token(identity=session['uid'])
+            session['token'] = access_token
+            print(session['uid'])
+            try:
+                check = db.execute("SELECT users FROM attempts")
+                if user in check:
+                    db.execute("UPDATE attempts SET loginattempts = 3 WHERE users = :user", user = user)
+            except:
+                db.execute("CREATE TABLE attempts (users VARCHAR(255), attempts int )")
+        if 'user' in session:
+            return redirect ( "/" )
+        else:
+            try:
+                check = db.execute("SELECT users FROM attempts")
+                if user not in check:
+                    db.execute("INSERT INTO attempts(users,loginattempts) VALUES :user , 3", user = user)
+                else:
+                    db.execute("UPDATE attempts SET loginattempts = loginattempts - 1 WHERE users = :user", user = user)
+            except:
+                db.execute("CREATE TABLE attempts (users VARCHAR(255), attempts int )")
+        return render_template ( "login.html", msg="Wrong username or password." )
+    else:
+        render_template("login.html", msg='Too Many Attempts, you have been logged out')
 
 @app.route("/history/")
 def history():
