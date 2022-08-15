@@ -22,19 +22,74 @@
               <strong><i class="far fa-futbol"></i> Country Flags Shoes Store</strong>
           </a>
         </nav>
+
     </header><br />
     <main>
         <div class="container">
             <div class="row">
                 <div class="col-sm">
                     <div>
-                        <p> Hello {{fname}} {{lname}} ! </p> <br>
-                        <p> Your email is: {{email}} </p> <br>
-                        <p> Your username is: {{username}}</p>
+                        <center>
+                        <table>
+                          <tr>
+                            <td>Email:</td>
+                            <td id="email"></td>
+                          </tr>
+                          <tr>
+                            <td>First Name:</td>
+                            <td id="fname"></td>
+                          </tr>
+                          <tr>
+                            <td>Last Name:</td>
+                            <td id="lname"></td>
+                          </tr>
+                          <tr>
+                            <td>Username:</td>
+                            <td id="username"></td>
+                          </tr>
+                        </table>
+                        </center>
                     </div>
                 </div>
             </div>
         </div>
+        <script>
+            async function getDetails(){
+                let token = getCookie('session');
+                console.log('{{token}}')
+                let response = await fetch('http://localhost:90/webapi/getdetails/{{token}}', {method: 'GET', credentials:'include'});
+                let data = await response.json()
+                document.getElementById('email').innerHTML = data[0].email;
+                document.getElementById('fname').innerHTML = data[0].fname;
+                document.getElementById('lname').innerHTML = data[0].lname;
+                document.getElementById('username').innerHTML = data[0].username;
+                return data
+            }
+            getDetails().then(response=>{
+                console.log('hi')
+                console.log(response)
+            })
+
+            function getCookie(name) {
+                // Split cookie string and get all individual name=value pairs in an array
+                var cookieArr = document.cookie.split(";");
+                console.log(cookieArr);
+                // Loop through the array elements
+                for(var i = 0; i < cookieArr.length; i++) {
+                    var cookiePair = cookieArr[i].split("=");
+                    /* Removing whitespace at the beginning of the cookie name
+                    and compare it with the given string */
+                    if(name == cookiePair[0].trim()) {
+                    // Decode the cookie value and return
+                    return decodeURIComponent(cookiePair[1]);
+                    }
+                }
+                // Return null if not found
+                return null;
+            }
+
+        </script>
     </main>
+
     </body>
 </html>

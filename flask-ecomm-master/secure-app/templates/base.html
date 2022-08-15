@@ -96,17 +96,18 @@
   <header>
     <nav class="navbar fixed-top navbar-dark bg-dark navbar-expand-sm box-shadow">
       <a href="/" class="navbar-brand d-flex align-items-center">
-          <strong><i class="far fa-futbol"></i> Country Flags Shoes Store</strong>
+          <strong><i class="far fa-futbol"></i> Country Flag Shoes Store</strong>
       </a>
       {% if session %}
       <ul class="navbar-nav mr-auto">
         <li class="nav-item"><a href="/logout/" class="nav-link">Logout</a></li>
+        <li class="nav-item"><a href="/details" class="nav-link">User Details</a></li>
         <li class="nav-item"><a href="/history/" class="nav-link">You Bought</a></li>
       {% else %}
       <ul class="navbar-nav mr-auto">
         <li class="nav-item"><a href="/new/" class="nav-link">Register</a></li>
         <li class="nav-item"><a href="/login/" class="nav-link">Login</a></li>
-
+        <li class="nav-item"><a href="/details" class="nav-link">User Details</a></li>
       {% endif %}
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbardrop" data-toggle="dropdown">

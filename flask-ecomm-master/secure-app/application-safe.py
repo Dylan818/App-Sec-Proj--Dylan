@@ -6,13 +6,11 @@ from flask import Flask, render_template, redirect, request, session, jsonify
 from datetime import datetime
 import hashlib as hl
 import re
-from flask_marshmallow import Marshmallow
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
 from xml.dom.minidom import parse, parseString
-
 
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
@@ -20,6 +18,8 @@ app.config["SESSION_TYPE"] = "filesystem"
 app.config['SECRET_KEY'] = "2917dedc-f90d-4375-9beb-70e4814b1ced"
 app.config['JWT_SECRET_KEY'] = '57716098c68c4f02bba85bbf82359be3'
 Session(app)
+
+app.config['SESSION_COOKIE_HTTPONLY'] = False
 jwt = JWTManager(app)
 if os.name != "nt":
     os.chdir(os.path.dirname(__file__))
@@ -53,10 +53,21 @@ def d_test():
 #state = db.execute("DROP TABLE users")
 #state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40));")
 
+@app.after_request
+def after_request(response):
+    response.headers['Access-Control-Allow-Origin'] = "http://localhost" # when deploy change to asgn-da##.eltontay.com
 
-@app.route("/webapi/getdetails/", methods=['GET', 'POST'])
-@jwt_required()
-def get_details():
+    return response
+@app.route("/details")
+def details():
+    if 'user' in session:
+        token = session['token']
+        return render_template("getdetails.html", token = token)
+    else:
+        return redirect('/')
+
+@app.route("/webapi/getdetails/<token>", methods=['GET', 'POST'])
+def get_details(token):
     if 'user' in session:
         uid = session['uid']
         query = "SELECT username, email, fname, lname FROM users WHERE uid = '{}'".format(uid)
