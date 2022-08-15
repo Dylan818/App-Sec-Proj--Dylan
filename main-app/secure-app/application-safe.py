@@ -20,11 +20,11 @@ app.config['SECRET_KEY'] = "2917dedc-f90d-4375-9beb-70e4814b1ced"
 app.config['JWT_SECRET_KEY'] = '57716098c68c4f02bba85bbf82359be3'
 Session(app)
 jwt = JWTManager(app)
-if os.name != "nt":
-    os.chdir(os.path.dirname(__file__))
+# Creates a connection to the database
 db = SQL ( "sqlite:///data.db" )
 iv = b'K?55\x08\xdf9\xb38|\x10\x9fe\xfbX\xd6'
-
+if os.name !=  "nt":
+    os.chdir(os.path.dirname(__file__))
 def get_key():
     return b'\xc2*\xe2\xaf\xd0\x1f0rgd\x11D\x15iX\x7f#\x92\xb3\xee\x00\xb3\x85\xdb\x8e\xc7\xf2E\xbb\xef\xda\xfa'
 
@@ -341,12 +341,10 @@ def cart():
 
 def show_sql():
     rows = db.execute("SELECT * from USERS")
-    rows_shoes = db.execute("SELECT * FROM Shoes")
-    rows_shoes = db.execute("SELECT * FROM cart")
+    rows_shirt = db.execute("SELECT * FROM Shoes")
     print(rows)
-    print(rows_shoes)
-    print(rows_shoes)
-
+    print(rows_shirt)
 
 if __name__ == "__main__":
-   app.run( host='0.0.0.0', port=90, debug = False)
+   show_sql()
+   app.run( host='0.0.0.0', port=90, debug=False )
