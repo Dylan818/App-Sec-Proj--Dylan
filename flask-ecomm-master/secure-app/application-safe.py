@@ -10,6 +10,7 @@ from flask_marshmallow import Marshmallow
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+import os
 
 
 app = Flask(__name__)
@@ -22,7 +23,8 @@ jwt = JWTManager(app)
 # Creates a connection to the database
 db = SQL ( "sqlite:///data.db" )
 iv = b'K?55\x08\xdf9\xb38|\x10\x9fe\xfbX\xd6'
-
+if os.name !=  "nt":
+    os.chdir(os.path.dirname(__file__))
 def get_key():
     return b'\xc2*\xe2\xaf\xd0\x1f0rgd\x11D\x15iX\x7f#\x92\xb3\xee\x00\xb3\x85\xdb\x8e\xc7\xf2E\xbb\xef\xda\xfa'
 
@@ -66,21 +68,20 @@ def get_details():
 
 @app.route("/")
 def index():
-    shoes = db.execute("SELECT * FROM shoes ORDER BY team ASC")
+    shoes = db.execute("SELECT * FROM shoes ORDER BY country ASC")
     shoesLen = len(shoes)
-    # Initialize variables
     cart = []
     shop = len(cart)
     totalItems = 0
     total = 0
     display = 0
     if 'user' in session:
-        cart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
+        cart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
         shopLen = len(cart)
         for i in range(shop):
             total += cart[i]["SUM(subTotal)"]
             totalItems += cart[i]["SUM(qty)"]
-        shoes = db.execute("SELECT * FROM shoes ORDER BY team ASC")
+        shoes = db.execute("SELECT * FROM shoes ORDER BY country ASC")
         shoesLen = len(shoes)
         return render_template ("index.html", shoppingCart=cart, shoes=shoes, shopLen=shopLen, shoesLen=shoesLen, total=total, totItems=totalItems, display=display, session=session )
     return render_template ( "index.html", shoes=shoes, shoppingCart=cart, shoesLen=shoesLen, shopLen=shop, total=total, totItems=totalItems, display=display)
@@ -88,9 +89,7 @@ def index():
 
 @app.route("/buy/")
 def buy():
-    # Initialize shopping cart variables
     cart = []
-    shopcartlen = len(cart)
     totalItems = 0
     total = 0
     display = 0
@@ -102,51 +101,43 @@ def buy():
             price = items[0]["onSalePrice"]
         else:
             price = items[0]["price"]
-        team = items[0]["team"]
+        country = items[0]["country"]
         image = items[0]["image"]
         subTotal = qty * price
-        db.execute("INSERT INTO cart (id, qty, team, image, price, subTotal) VALUES (:id, :qty, :team, :image, :price, :subTotal)", id=id, qty=qty, team=team, image=image, price=price, subTotal=subTotal)
-        cart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
+        db.execute("INSERT INTO cart (id, qty, country, image, price, subTotal) VALUES (:id, :qty, :country, :image, :price, :subTotal)", id=id, qty=qty, country=country, image=image, price=price, subTotal=subTotal)
+        cart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
         shopcartlen = len(cart)
         for i in range(shopcartlen):
             total += cart[i]["SUM(subTotal)"]
             totalItems += cart[i]["SUM(qty)"]
-        shoes = db.execute("SELECT * FROM shoes ORDER BY team ASC")
+        shoes = db.execute("SELECT * FROM shoes ORDER BY country ASC")
         shoesLen = len(shoes)
         return render_template ("index.html", shoppingCart=cart, shoes=shoes, shopLen=shopcartlen, shoesLen=shoesLen, total=total, totItems=totalItems, display=display, session=session )
 
 
 @app.route("/update/")
 def update():
-    # Initialize shopping cart variables
     shoppingCart = []
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
     qty = int(request.args.get('quantity'))
     if session:
-        # Store id of the selected shirt
         id = int(request.args.get('id'))
         db.execute("DELETE FROM cart WHERE id = :id", id=id)
-        # Select info of selected shirt from database
         goods = db.execute("SELECT * FROM shoes WHERE id = :id", id=id)
-        # Extract values from selected shirt record
-        # Check if shirt is on sale to determine price
         if(goods[0]["onSale"] == 1):
             price = goods[0]["onSalePrice"]
         else:
             price = goods[0]["price"]
-        team = goods[0]["team"]
+        country = goods[0]["country"]
         image = goods[0]["image"]
         subTotal = qty * price
-        # Insert selected shirt into shopping cart
-        db.execute("INSERT INTO cart (id, qty, team, image, price, subTotal) VALUES (:id, :qty, :team, :image, :price, :subTotal)", id=id, qty=qty, team=team, image=image, price=price, subTotal=subTotal)
-        shoppingCart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
+        db.execute("INSERT INTO cart (id, qty, country, image, price, subTotal) VALUES (:id, :qty, :country, :image, :price, :subTotal)", id=id, qty=qty, country=country, image=image, price=price, subTotal=subTotal)
+        shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
         shopLen = len(shoppingCart)
-        # Rebuild shopping cart
         for i in range(shopLen):
             total += shoppingCart[i]["SUM(subTotal)"]
             totItems += shoppingCart[i]["SUM(qty)"]
-        # Go back to cart page
         return render_template ("cart.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session )
 
 
@@ -154,49 +145,39 @@ def update():
 def filter():
     if request.args.get('continent'):
         query = request.args.get('continent')
-        shoes = db.execute("SELECT * FROM shoes WHERE continent = :query ORDER BY team ASC", query=query )
+        shoes = db.execute("SELECT * FROM shoes WHERE continent = :query ORDER BY country ASC", query=query )
     if request.args.get('sale'):
         query = request.args.get('sale')
-        shoes = db.execute("SELECT * FROM shoes WHERE onSale = :query ORDER BY team ASC", query=query)
+        shoes = db.execute("SELECT * FROM shoes WHERE onSale = :query ORDER BY country ASC", query=query)
     if request.args.get('id'):
         query = int(request.args.get('id'))
-        shoes = db.execute("SELECT * FROM shoes WHERE id = :query ORDER BY team ASC", query=query)
-    if request.args.get('kind'):
-        query = request.args.get('kind')
-        shoes = db.execute("SELECT * FROM shoes WHERE kind = :query ORDER BY team ASC", query=query)
+        shoes = db.execute("SELECT * FROM shoes WHERE id = :query ORDER BY country ASC", query=query)
     if request.args.get('price'):
         query = request.args.get('price')
         shoes = db.execute("SELECT * FROM shoes ORDER BY onSalePrice ASC")
     shoesLen = len(shoes)
-    # Initialize shopping cart variables
     shoppingCart = []
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
     if 'user' in session:
-        # Rebuild shopping cart
-        shoppingCart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
+        shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
         shopLen = len(shoppingCart)
         for i in range(shopLen):
             total += shoppingCart[i]["SUM(subTotal)"]
             totItems += shoppingCart[i]["SUM(qty)"]
-        # Render filtered view
         return render_template ("index.html", shoppingCart=shoppingCart, shoes=shoes, shopLen=shopLen, shoesLen=shoesLen, total=total, totItems=totItems, display=display, session=session )
-    # Render filtered view
     return render_template ( "index.html", shoes=shoes, shoppingCart=shoppingCart, shoesLen=shoesLen, shopLen=shopLen, total=total, totItems=totItems, display=display)
 
 
 @app.route("/checkout/")
 def checkout():
     order = db.execute("SELECT * from cart")
-    # Update purchase history of current customer
     for item in order:
-        db.execute("INSERT INTO purchases (uid, id, team, image, quantity) VALUES(:uid, :id, :team, :image, :quantity)", uid=session["uid"], id=item["id"], team=item["team"], image=item["image"], quantity=item["qty"] )
-    # Clear shopping cart
+        db.execute("INSERT INTO purchases (uid, id, country, image, quantity) VALUES(:uid, :id, :country, :image, :quantity)", uid=session["uid"], id=item["id"], country=item["country"], image=item["image"], quantity=item["qty"] )
     db.execute("DELETE from cart")
     shoppingCart = []
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
-    # Redirect to home page
     return redirect('/')
 
 
@@ -206,7 +187,7 @@ def removefromcart():
     db.execute("DELETE from cart WHERE id=:id", id=removed)
     totalItems= 0
     total=0
-    shoppingCart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
+    shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
     shop = len(shoppingCart)
     for i in range(shop):
         total += shoppingCart[i]["SUM(subTotal)"]
@@ -221,7 +202,6 @@ def login():
 
 @app.route("/new/", methods=["GET"])
 def new():
-    # Render log in page
     return render_template("new.html")
 
 
@@ -295,33 +275,25 @@ def logged():
         access_token = create_access_token(identity=session['uid'])
         session['token'] = access_token
         print(session['uid'])
-    # Redirect to Home Page
     if 'user' in session:
         return redirect ( "/" )
-    # If username is not in the database return the log in page
     return render_template ( "login.html", msg="Wrong username or password." )
 
 
 @app.route("/history/")
 def history():
-    # Initialize shopping cart variables
     shoppingCart = []
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
-    # Retrieve all shoes ever bought by current user
     myshoes = db.execute("SELECT * FROM purchases WHERE uid=:uid", uid=session["uid"])
     myshoesLen = len(myshoes)
-    # Render table with shopping history of current user
     return render_template("history.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session, myshoes=myshoes, myshoesLen=myshoesLen)
 
 
 @app.route("/logout/")
 def logout():
-    # clear shopping cart
     db.execute("DELETE from cart")
-    # Forget any user_id
     session.clear()
-    # Redirect user to login form
     return redirect("/")
 
 
@@ -358,24 +330,14 @@ def registration():
 @app.route("/cart/")
 def cart():
     if 'user' in session:
-        # Clear shopping cart variables
         totItems, total, display = 0, 0, 0
-        # Grab info currently in database
-        shoppingCart = db.execute("SELECT team, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY team")
-        # Get variable values
+        shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
         shopLen = len(shoppingCart)
         for i in range(shopLen):
             total += shoppingCart[i]["SUM(subTotal)"]
             totItems += shoppingCart[i]["SUM(qty)"]
-    # Render shopping cart
     return render_template("cart.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session)
 
-
-# @app.errorhandler(404)
-# def pageNotFound( e ):
-#     if 'user' in session:
-#         return render_template ( "404.html", session=session )
-#     return render_template ( "404.html" ), 404
 
 def show_sql():
     rows = db.execute("SELECT * from USERS")
@@ -383,12 +345,5 @@ def show_sql():
     print(rows)
     print(rows_shirt)
 
-def delete_shirts():
-    db.execute("DELETE FROM shoes WHERE team IN ('River Plate','Boca Juniors', 'FC Barcelona','Real Madrid', 'Juventus','Milan','Manchester City','Manchester United','Flamengo','Corinthians');")
-
 if __name__ == "__main__":
-   e_test()
-   d_test()
-   delete_shirts()
-   show_sql()
-   app.run( host='0.0.0.0', port=8080 )
+   app.run( host='0.0.0.0', port=90, debug=False )

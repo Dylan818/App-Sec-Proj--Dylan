@@ -37,7 +37,7 @@
                       <tr>
                         <th scope="col">#</th>
                         <th scope="col">Item</th>
-                        <th scope="col">Team</th>
+                        <th scope="col">Country</th>
                         <th scope="col">Quantity</th>
                         <th scope="col">Unit Price</th>
                         <th scope="col">Sub-Total</th>
@@ -50,17 +50,11 @@
                     {% for i in range(shopLen) %}
                       <tr>
                         <th scope="row">{{ i + 1 }}</th>
-                        <td><img src="/static/img/{{ shoppingCart[i]['image'] }}" width="30px" alt="{{ shoppingCart[i]['team'] }}" /></td>
-                        <td>{{ shoppingCart[i]["team"] }}</td>
+                        <td><img src="/static/img/{{ shoppingCart[i]['image'] }}" width="30px" alt="{{ shoppingCart[i]['country'] }}" /></td>
+                        <td>{{ shoppingCart[i]["country"] }}</td>
                         <td>{{ shoppingCart[i]['SUM(qty)'] }}</td>
                         <td>{{ '${:,.2f}'.format(shoppingCart[i]["price"]) }}</td>
-                        <td>{{ '${:,.2f}'.format(shoppingCart[i]['SUM(subTotal)']) }}</td><!--
-                        <td>
-                          <form action="/remove/" methods="GET">
-                            <input type="hidden" name="id" value="{{ shoppingCart[i]["id"] }}" />
-                            <button type="submit" class="btn btn-secondary btn-sm" id="removeFromCart">Remove</button>
-                          </form>
-                        </td>-->
+                        <td>{{ '${:,.2f}'.format(shoppingCart[i]['SUM(subTotal)']) }}</td>
                       </tr>
                     </tbody>
                     {% endfor %}
@@ -123,8 +117,6 @@
               <a class="dropdown-item" href="/filter/?continent=europe">Region-Europe</a>
               <a class="dropdown-item" href="/filter/?continent=americas">Region-Americas</a>
               <a class="dropdown-item" href="/filter/?continent=africa">Region-Africa</a>
-              <a class="dropdown-item" href="/filter/?kind=national">National Teams</a>
-              <a class="dropdown-item" href="/filter/?kind=club">Clubs</a>
               <a class="dropdown-item" href="/filter/?sale=1">On Sale</a>
               <a class="dropdown-item" href="/filter/?price=1">Price $0-$000</a>
           </div>

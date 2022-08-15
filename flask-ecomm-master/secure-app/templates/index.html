@@ -12,8 +12,8 @@ Soccer Jersey Store - Home
               <div class="card text-center">
                   <div class="card-body">
                     <form action="/buy/" methods="POST">
-                      <img src="/static/img/{{shoes[i]["image"]}}" class="shirt" alt="" />
-                      <h5 class="card-title">{{shoes[i]["team"]}}</h5>
+                      <img src="/static/img/{{shoes[i]['image']}}" class="shirt" alt="" />
+                      <h5 class="card-title">{{shoes[i]["country"]}}</h5>
                       {% if shoes[i]["onSale"] %}
                         <img src="/static/img/sale-icon.png" width="26px" />
                         <h4 class="card-text price" style="color:red; display:inline">{{ '{:,.2f}'.format(shoes[i]["onSalePrice"]) }}</h4>
@@ -25,7 +25,7 @@ Soccer Jersey Store - Home
                           <input class="quantity" name="quantity" value='0' />
                           <span class="increment target">+</span>
                       </div>
-                      <input type="hidden" name="id" value="{{shoes[i]["id"]}}" />
+                      <input type="hidden" name="id" value="{{shoes[i]['id']}}" />
                       {% if not session %}
                       <input type="hidden" name="loggedin" value="0" />
                       {% else %}
