@@ -315,7 +315,7 @@ def registration():
             return render_template ( "new.html", msg="Invalid username!")
         elif validate_password(request.form["password"]) is False:
             return render_template ( "new.html", msg="Invalid password!" )
-        rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = username )
+        rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = encrypt(get_key(), username.encode('utf-8')) )
         if len( rows ) > 0:
             return render_template ( "new.html", msg="Username already exists!" )
         email = encrypt(get_key(), email.encode('utf-8'))
