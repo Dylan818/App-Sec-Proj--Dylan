@@ -25,13 +25,15 @@ function validate ( )
     let valid = true;
     reset_form ( );
     SUBMIT.hide();
+    var letters = /^[A-Za-z]+$/;
+    var decimal =  /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s)$/;
 
     // This currently checks to see if the username is
     // present and if it is at least 10 characters in length.
-    if ( !USERNAME.val() || USERNAME.val().length < 10 )
+    if ( !USERNAME.val() || USERNAME.val().length < 10 || !USERNAME.value.match(letters) )
     {
         // Show an invalid input message
-        USERNAME_MSG.html( "Username must be 10 characters or more" );
+        USERNAME_MSG.html( "Username must be 10 characters or more and must only contain letters" );
         USERNAME_MSG.show();
         // Indicate the type of bad input in the console.
         console.log( "Bad username" );
@@ -48,9 +50,9 @@ function validate ( )
         valid = false;
     }
 
-    if ( !PASSWORD.val() || PASSWORD.val().length < 12 )
+    if ( !PASSWORD.val() || PASSWORD.val().length < 12 || !PASSWORD.value.match(decimal) )
     {
-        PASSWORD_MSG.html("Password needs to be at least 12 characters long");
+        PASSWORD_MSG.html("Password needs to be at least 12 characters long and contain 1 lowercase letter,1 uppercase letter, 1 number and 1 special character ");
         PASSWORD_MSG.show();
         valid = false;
     }
@@ -62,16 +64,16 @@ function validate ( )
         valid = false;
     }
 
-    if ( !FNAME.val() )
+    if ( !FNAME.val() || !FNAME.value.match(letters))
     {
-        FNAME_MSG.html("First name must not be empty");
+        FNAME_MSG.html("First name must not be empty and must only contain letters");
         FNAME_MSG.show();
         valid = false;
     }
 
-    if ( !LNAME.val() )
+    if ( !LNAME.val() || !LNAME.value.match(letters))
     {
-        LNAME_MSG.html("Last name must not be empty");
+        LNAME_MSG.html("Last name must not be empty and must only contain letters");
         LNAME_MSG.show();
         valid = false;
     }
