@@ -87,15 +87,16 @@ def index():
     return render_template ( "index.html", shoes=shoes, shoppingCart=cart, shoesLen=shoesLen, shopLen=shop, total=total, totItems=totalItems, display=display)
 
 
-@app.route("/buy/")
+@app.route("/buy/", methods = ["POST"])
 def buy():
     cart = []
     totalItems = 0
     total = 0
     display = 0
-    qty = int(request.args.get('quantity'))
+    qty = int(request.form['quantity'])
     if session:
-        id = int(request.args.get('id'))
+        id = int(request.form['id'])
+        cust_id = session['uid']
         items = db.execute("SELECT * FROM shoes WHERE id = :id", id=id)
         if(items[0]["onSale"] == 1):
             price = items[0]["onSalePrice"]
@@ -104,7 +105,7 @@ def buy():
         country = items[0]["country"]
         image = items[0]["image"]
         subTotal = qty * price
-        db.execute("INSERT INTO cart (id, qty, country, image, price, subTotal) VALUES (:id, :qty, :country, :image, :price, :subTotal)", id=id, qty=qty, country=country, image=image, price=price, subTotal=subTotal)
+        db.execute("INSERT INTO cart (id, qty, country, image, price, subTotal, cust_id) VALUES (:id, :qty, :country, :image, :price, :subTotal, :cust_id)", id=id, qty=qty, country=country, image=image, price=price, subTotal=subTotal, cust_id = cust_id)
         cart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
         shopcartlen = len(cart)
         for i in range(shopcartlen):
@@ -112,7 +113,7 @@ def buy():
             totalItems += cart[i]["SUM(qty)"]
         shoes = db.execute("SELECT * FROM shoes ORDER BY country ASC")
         shoesLen = len(shoes)
-        return render_template ("index.html", shoppingCart=cart, shoes=shoes, shopLen=shopcartlen, shoesLen=shoesLen, total=total, totItems=totalItems, display=display, session=session )
+        return render_template ("index.html", shoppingCart=cart, shoes=shoes, shopLen=shopcartlen, shoesLen=shoesLen, total=total, totItems=totalItems, session=session )
 
 
 @app.route("/update/")
@@ -123,7 +124,8 @@ def update():
     qty = int(request.args.get('quantity'))
     if session:
         id = int(request.args.get('id'))
-        db.execute("DELETE FROM cart WHERE id = :id", id=id)
+        cust_id = session['uid']
+        db.execute("DELETE FROM cart WHERE id = :id AND cust_id = :cust_id", id=id, cust_id = cust_id)
         goods = db.execute("SELECT * FROM shoes WHERE id = :id", id=id)
         if(goods[0]["onSale"] == 1):
             price = goods[0]["onSalePrice"]
@@ -132,7 +134,7 @@ def update():
         country = goods[0]["country"]
         image = goods[0]["image"]
         subTotal = qty * price
-        db.execute("INSERT INTO cart (id, qty, country, image, price, subTotal) VALUES (:id, :qty, :country, :image, :price, :subTotal)", id=id, qty=qty, country=country, image=image, price=price, subTotal=subTotal)
+        db.execute("INSERT INTO cart (id, qty, country, image, price, subTotal, cust_id) VALUES (:id, :qty, :country, :image, :price, :subTotal, :cust_id)", id=id, qty=qty, country=country, image=image, price=price, subTotal=subTotal, cust_id = cust_id)
         shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
         shopLen = len(shoppingCart)
         for i in range(shopLen):
@@ -160,7 +162,8 @@ def filter():
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
     if 'user' in session:
-        shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
+        cust_id = session['uid']
+        shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart WHERE cust_id = :cust_id GROUP BY country", cust_id = cust_id)
         shopLen = len(shoppingCart)
         for i in range(shopLen):
             total += shoppingCart[i]["SUM(subTotal)"]
@@ -171,10 +174,11 @@ def filter():
 
 @app.route("/checkout/")
 def checkout():
-    order = db.execute("SELECT * from cart")
+    cust_id = session['uid']
+    order = db.execute("SELECT * from cart WHERE cust_id = :cust_id", cust_id = cust_id)
     for item in order:
         db.execute("INSERT INTO purchases (uid, id, country, image, quantity) VALUES(:uid, :id, :country, :image, :quantity)", uid=session["uid"], id=item["id"], country=item["country"], image=item["image"], quantity=item["qty"] )
-    db.execute("DELETE from cart")
+    db.execute("DELETE from cart WHERE cust_id = :cust_id", cust_id = cust_id)
     shoppingCart = []
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
@@ -184,10 +188,11 @@ def checkout():
 @app.route("/removefromcart/", methods=["GET"])
 def removefromcart():
     removed = int(request.args.get("id"))
-    db.execute("DELETE from cart WHERE id=:id", id=removed)
+    cust_id = session['uid']
+    db.execute("DELETE from cart WHERE id=:id AND cust_id = :cust_id", id=removed, cust_id = cust_id)
     totalItems= 0
     total=0
-    shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
+    shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart WHERE cust_id = :cust_id GROUP BY country", cust_id = cust_id)
     shop = len(shoppingCart)
     for i in range(shop):
         total += shoppingCart[i]["SUM(subTotal)"]
@@ -331,7 +336,8 @@ def registration():
 def cart():
     if 'user' in session:
         totItems, total, display = 0, 0, 0
-        shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
+        cust_id = session['uid']
+        shoppingCart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart WHERE cust_id = (:cust_id)GROUP BY country;", cust_id = cust_id)
         shopLen = len(shoppingCart)
         for i in range(shopLen):
             total += shoppingCart[i]["SUM(subTotal)"]
@@ -340,13 +346,18 @@ def cart():
 
 
 def show_sql():
-    rows = db.execute("SELECT * from USERS")
-    rows_shoes = db.execute("SELECT * FROM Shoes")
-    rows_shoes = db.execute("SELECT * FROM cart")
+    rows = db.execute("SELECT * from USERS;")
+    rows_shoe = db.execute("SELECT * FROM Shoes;")
+    rows_shoes = db.execute("SELECT * FROM cart;")
+    rows_purchases = db.execute("SELECT * FROM purchases;")
     print(rows)
+    print(rows_shoe)
     print(rows_shoes)
-    print(rows_shoes)
+    print(rows_purchases)
 
+def add_row():
+    db.execute("ALTER TABLE cart ADD cust_id VARCHAR (100);")
 
 if __name__ == "__main__":
-   app.run( host='0.0.0.0', port=90, debug = False)
+   show_sql()
+   app.run( host='0.0.0.0', port=90)
