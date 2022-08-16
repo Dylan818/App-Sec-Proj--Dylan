@@ -22,19 +22,69 @@
               <strong><i class="far fa-futbol"></i> Country Flags Shoes Store</strong>
           </a>
         </nav>
+
     </header><br />
     <main>
         <div class="container">
             <div class="row">
                 <div class="col-sm">
                     <div>
-                        <p> Hello {{fname}} {{lname}} ! </p> <br>
-                        <p> Your email is: {{email}} </p> <br>
-                        <p> Your username is: {{username}}</p>
+                        <center>
+                        <table>
+                          <tr>
+                            <td>Email:</td>
+                            <td id="email"></td>
+                          </tr>
+                          <tr>
+                            <td>First Name:</td>
+                            <td id="fname"></td>
+                          </tr>
+                          <tr>
+                            <td>Last Name:</td>
+                            <td id="lname"></td>
+                          </tr>
+                          <tr>
+                            <td>Username:</td>
+                            <td id="username"></td>
+                          </tr>
+                        </table>
+                        </center>
                     </div>
                 </div>
             </div>
         </div>
+        <script>
+            async function getDetails(){
+                let token = getCookie('session');
+                console.log('{{token}}')
+                let response = await fetch('https://aspj-dahj.eltontay.com/webapi/getdetails/{{token}}', {method: 'GET', credentials:'include'});
+                let data = await response.json()
+                document.getElementById('email').innerHTML = data[0].email;
+                document.getElementById('fname').innerHTML = data[0].fname;
+                document.getElementById('lname').innerHTML = data[0].lname;
+                document.getElementById('username').innerHTML = data[0].username;
+                return data
+            }
+            getDetails().then(response=>{
+                console.log('hi')
+                console.log(response)
+            })
+
+            function getCookie(name) {
+                var cookieArr = document.cookie.split(";");
+                console.log(cookieArr);
+                for(var i = 0; i < cookieArr.length; i++) {
+                    var cookiePair = cookieArr[i].split("=");
+
+                    if(name == cookiePair[0].trim()) {
+                    return decodeURIComponent(cookiePair[1]);
+                    }
+                }
+                return null;
+            }
+
+        </script>
     </main>
+
     </body>
 </html>

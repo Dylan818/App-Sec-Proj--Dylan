@@ -2,8 +2,6 @@
 <html lang="en">
 
     <head>
-        <meta http-equiv="Content-Security-Policy"
-        content="script-src 'self' aspj-dahj.eltontay.com 'unsafe-inline';">
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
         <meta content="utf-8" http-equiv="encoding">
         <meta charset="utf-8">
@@ -97,14 +95,13 @@
   </div>
   <header>
     <nav class="navbar fixed-top navbar-dark bg-dark navbar-expand-sm box-shadow">
-      <a href="/" class="navbar-brand d-flex align-items-center">
-          <strong><i class="far fa-futbol"></i> Country Flag Shoes Store</strong>
+      <a href="/admin" class="navbar-brand d-flex align-items-center">
+          <strong><i class="far fa-futbol"></i> Admin Page</strong>
       </a>
       {% if session %}
       <ul class="navbar-nav mr-auto">
         <li class="nav-item"><a href="/logout/" class="nav-link">Logout</a></li>
         <li class="nav-item"><a href="/details" class="nav-link">User Details</a></li>
-        <li class="nav-item"><a href="/history/" class="nav-link">You Bought</a></li>
       {% else %}
       <ul class="navbar-nav mr-auto">
         <li class="nav-item"><a href="/new/" class="nav-link">Register</a></li>
@@ -116,7 +113,7 @@
             Filter By
           </a>
           <div class="dropdown-menu">
-              <a class="dropdown-item" href="/">All</a>
+              <a class="dropdown-item" href="/admin">All</a>
               <a class="dropdown-item" href="/filter/?continent=europe">Region-Europe</a>
               <a class="dropdown-item" href="/filter/?continent=americas">Region-Americas</a>
               <a class="dropdown-item" href="/filter/?continent=africa">Region-Africa</a>
@@ -149,7 +146,7 @@
             <div class="row">
                 <div class="col-md">
                     <hr />
-                    <p>&#169; <a href="/">Country Flag Shoe Store</a></p>
+                    <p>&#169; <a href="/">Admin Page</a></p>
                 </div>
             </div>
         </div>

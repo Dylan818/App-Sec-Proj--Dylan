@@ -6,7 +6,7 @@ from flask import Flask, render_template, redirect, request, session, jsonify
 from datetime import datetime
 import hashlib as hl
 import re
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token
+from flask_jwt_extended import JWTManager, create_access_token
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
@@ -19,14 +19,13 @@ app.config["SESSION_TYPE"] = "filesystem"
 app.config['SECRET_KEY'] = "2917dedc-f90d-4375-9beb-70e4814b1ced"
 app.config['JWT_SECRET_KEY'] = '57716098c68c4f02bba85bbf82359be3'
 Session(app)
+
+app.config['SESSION_COOKIE_HTTPONLY'] = False
 jwt = JWTManager(app)
 if os.name != "nt":
     os.chdir(os.path.dirname(__file__))
 db = SQL ( "sqlite:///data.db" )
 iv = b'K?55\x08\xdf9\xb38|\x10\x9fe\xfbX\xd6'
-
-db.execute("DROP TABLE logs")
-db.execute("CREATE TABLE logs( log varchar(600)) ")
 
 def get_key():
     return b'\xc2*\xe2\xaf\xd0\x1f0rgd\x11D\x15iX\x7f#\x92\xb3\xee\x00\xb3\x85\xdb\x8e\xc7\xf2E\xbb\xef\xda\xfa'
@@ -53,12 +52,23 @@ def d_test():
     emsg = encrypt(get_key(), msg.encode('utf-8'))
     print(decrypt(get_key(), emsg), "decrypted")
 #state = db.execute("DROP TABLE users")
-#state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40));")
+#state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40), admin varchar(100));")
 
+@app.after_request
+def after_request(response):
+    response.headers['Access-Control-Allow-Origin'] = "https://aspj-dahj.eltontay.com" # when deploy change to asgn-da##.eltontay.com
 
-@app.route("/webapi/getdetails/", methods=['GET', 'POST'])
-@jwt_required()
-def get_details():
+    return response
+@app.route("/details")
+def details():
+    if 'user' in session:
+        token = session['token']
+        return render_template("getdetails.html", token = token)
+    else:
+        return redirect('/')
+
+@app.route("/webapi/getdetails/<token>", methods=['GET', 'POST'])
+def get_details(token):
     if 'user' in session:
         uid = session['uid']
         query = "SELECT username, email, fname, lname FROM users WHERE uid = '{}'".format(uid)
@@ -94,6 +104,28 @@ def index():
         shoesLen = len(shoes)
         return render_template ("index.html", shoppingCart=cart, shoes=shoes, shopLen=shopLen, shoesLen=shoesLen, total=total, totItems=totalItems, display=display, session=session )
     return render_template ( "index.html", shoes=shoes, shoppingCart=cart, shoesLen=shoesLen, shopLen=shop, total=total, totItems=totalItems, display=display)
+
+
+@app.route("/admin")
+def index_admin():
+    shoes = db.execute("SELECT * FROM shoes ORDER BY country ASC")
+    shoesLen = len(shoes)
+    cart = []
+    shop = len(cart)
+    totalItems = 0
+    total = 0
+    display = 0
+    if 'admin' in session :
+        cart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
+        shopLen = len(cart)
+        for i in range(shop):
+            total += cart[i]["SUM(subTotal)"]
+            totalItems += cart[i]["SUM(qty)"]
+        shoes = db.execute("SELECT * FROM shoes ORDER BY country ASC")
+        shoesLen = len(shoes)
+        return render_template ("adminhome.html", shoppingCart=cart, shoes=shoes, shopLen=shopLen, shoesLen=shoesLen, total=total, totItems=totalItems, display=display, session=session )
+    else:
+        return render_template ( "index.html", shoes=shoes, shoppingCart=cart, shoesLen=shoesLen, shopLen=shop, total=total, totItems=totalItems, display=display)
 
 
 @app.route("/buy/", methods = ["POST"])
@@ -224,20 +256,24 @@ def login():
 def new():
     return render_template("new.html")
 
+@app.route('/adhome')
+def adhome():
+    return render_template('adminhome.html')
+
+@app.route('/adnew', methods = ["GET"])
+def adnew():
+    return render_template('adminNew.html')
 
 def validate_username(user_input):
     pattern = r"\d|[a-z]|[A-Z]"
     if re.search(pattern, user_input):
         x = re.findall(pattern, user_input)
-        print(x)
         if len(x) == len(user_input):
-            print("h1")
             return True
         else:
             return False
 
     else:
-        print("Not found")
         return False
 
 
@@ -284,12 +320,11 @@ def loggedapi():
 
 @app.route("/logged/", methods=["POST"] )
 def logged():
-    #db.execute("DROP TABLE attempts")
-    #db.execute("CREATE TABLE attempts (users varchar(255), loginattempts int)")
     user = request.form["username"].lower()
     pwd = hashing_pwsd(request.form["password"])
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
     if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
+        print("hi1")
         return render_template ( "login.html", msg="Wrong username or password." )
     user = encrypt(get_key(), user.encode('utf-8'))
     try:
@@ -302,6 +337,22 @@ def logged():
         attempts = 1
     if attempts > 0:
         rows = db.execute(request_query, username = user, password = pwd)
+        print("hi2")
+        if len(rows) == 1 and rows[0]['admin'] == 'yes':
+            session['admin'] = True
+            session['user'] = user
+            session['time'] = datetime.now( )
+            session['uid'] = rows[0]["uid"]
+            access_token = create_access_token(identity=session['uid'])
+            session['token'] = access_token
+            try:
+                check = db.execute("SELECT users FROM attempts")
+                if user in check:
+                    db.execute("UPDATE attempts SET loginattempts = 3 WHERE users = :user", user=user)
+            except:
+                db.execute("CREATE TABLE attempts (users VARCHAR(255), attempts int )")
+            if session['admin'] is True:
+                return redirect('/admin')
         if len(rows) == 1:
             session['user'] = user
             session['time'] = datetime.now( )
@@ -402,8 +453,18 @@ def show_sql():
     print(rows_shoes)
     print(rows_purchases)
 
-def add_row():
-    db.execute("ALTER TABLE cart ADD cust_id VARCHAR (100);")
+#admin details
+#username: adminAccount
+#password: adminPass
+def insert_admin():
+    uid = str(uuid.uuid4())
+    username = encrypt(get_key(), 'test'.encode('utf-8'))
+    password = hashing_pwsd('123')
+    fname = 'admin'
+    lname = 'admin'
+    email = encrypt(get_key(),'admin@gmail.com'.encode('utf-8'))
+    admin = 'yes'
+    db.execute("INSERT INTO users (uid, username, password, fname, lname, email, admin) VALUES (:uid, :username, :password, :fname, :lname, :email, :admin)", uid=uid, username=username, password=password, fname=fname, lname=lname,email=email, admin=admin)
 
 if __name__ == "__main__":
    show_sql()
