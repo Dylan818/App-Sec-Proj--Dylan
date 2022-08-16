@@ -6,12 +6,11 @@ from flask import Flask, render_template, redirect, request, session, jsonify
 from datetime import datetime
 import hashlib as hl
 import re
-from flask_marshmallow import Marshmallow
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
-from xml.dom.minidom import parse, parseString
+from defusedxml.ElementTree import parse
 
 
 app = Flask(__name__)
@@ -25,6 +24,9 @@ if os.name != "nt":
     os.chdir(os.path.dirname(__file__))
 db = SQL ( "sqlite:///data.db" )
 iv = b'K?55\x08\xdf9\xb38|\x10\x9fe\xfbX\xd6'
+
+db.execute("DROP TABLE logs")
+db.execute("CREATE TABLE logs( log varchar(600)) ")
 
 def get_key():
     return b'\xc2*\xe2\xaf\xd0\x1f0rgd\x11D\x15iX\x7f#\x92\xb3\xee\x00\xb3\x85\xdb\x8e\xc7\xf2E\xbb\xef\xda\xfa'
@@ -66,6 +68,12 @@ def get_details():
         return jsonify(details)
     return jsonify(message="Not authorised!")
 
+@app.after_request
+def after_request_func(response):
+    print("after_request executing")
+    print(response)
+    db.execute("INSERT INTO logs VALUES (:response)", response = str(response))
+    return response
 
 @app.route("/")
 def index():
@@ -187,10 +195,9 @@ def checkout():
 
 @app.route("/thankyou/")
 def thankyou():
-    document = parse("thankyou.svg")
-    with open("thankyou.svg") as file:
+    with open("static/svg/thankyou.svg") as file:
         document = parse(file)
-        render_template('thankyou.html' , document=document)
+        return render_template('thankyou.html' , document=document)
 
 
 @app.route("/removefromcart/", methods=["GET"])
@@ -272,8 +279,13 @@ def loggedapi():
     return jsonify(message="Invalid login!")
 
 
+
+
+
 @app.route("/logged/", methods=["POST"] )
 def logged():
+    #db.execute("DROP TABLE attempts")
+    #db.execute("CREATE TABLE attempts (users varchar(255), loginattempts int)")
     user = request.form["username"].lower()
     pwd = hashing_pwsd(request.form["password"])
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
@@ -281,8 +293,12 @@ def logged():
         return render_template ( "login.html", msg="Wrong username or password." )
     user = encrypt(get_key(), user.encode('utf-8'))
     try:
-        attempts = db.execute("SELECT loginattempts FROM attempts WHERE users = user", user= user)
+        attempts = db.execute("SELECT loginattempts FROM attempts WHERE users = :user;", user= user)
     except:
+        attempts = 1
+    if len(attempts) > 0:
+        attempts = attempts[0]["loginattempts"]
+    else:
         attempts = 1
     if attempts > 0:
         rows = db.execute(request_query, username = user, password = pwd)
@@ -293,26 +309,28 @@ def logged():
             access_token = create_access_token(identity=session['uid'])
             session['token'] = access_token
             print(session['uid'])
-            try:
-                check = db.execute("SELECT users FROM attempts")
-                if user in check:
-                    db.execute("UPDATE attempts SET loginattempts = 3 WHERE users = :user", user = user)
-            except:
-                db.execute("CREATE TABLE attempts (users VARCHAR(255), attempts int )")
+            check = db.execute("SELECT users FROM attempts")
+            l = False
+            for x in check:
+                if user == x['users']:
+                    l = True
+            if l == True:
+                db.execute("UPDATE attempts SET loginattempts = 3 WHERE users = :user;", user = user)
         if 'user' in session:
             return redirect ( "/" )
         else:
-            try:
-                check = db.execute("SELECT users FROM attempts")
-                if user not in check:
-                    db.execute("INSERT INTO attempts(users,loginattempts) VALUES :user , 3", user = user)
-                else:
-                    db.execute("UPDATE attempts SET loginattempts = loginattempts - 1 WHERE users = :user", user = user)
-            except:
-                db.execute("CREATE TABLE attempts (users VARCHAR(255), attempts int )")
+            check = db.execute("SELECT users FROM attempts")
+            l = False
+            for x in check:
+                if user == x['users']:
+                    l = True
+            if l == False:
+                db.execute("INSERT INTO attempts (users,loginattempts) VALUES (:user , 3);", user = user)
+            else:
+                db.execute("UPDATE attempts SET loginattempts = loginattempts - 1 WHERE users = :user;", user = user)
         return render_template ( "login.html", msg="Wrong username or password." )
     else:
-        render_template("login.html", msg='Too Many Attempts, you have been logged out')
+        return render_template("login.html", msg='Too Many Attempts, you have been logged out')
 
 @app.route("/history/")
 def history():

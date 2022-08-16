@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
-    <!ENTITY custom_entity "Thank You">
+    <!ENTITY custom_entity "Hello">
 ]>
 <svg xmlns="http://www.w3.org/2000/svg"
   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -25,7 +25,7 @@
     <path d="M-20 20 A25 25 0 0 0 20 20"
       fill="white" stroke="black" stroke-width="3"/>
   </g>
-  <text x="-40" y="75">&custom_entity;&lt;svg&gt;!</text>
+  <text x="-40" y="75">&custom_entity; &lt;svg&gt;!</text>
   <script>
     <![CDATA[
       console.log("CDATA disables XML parsing: <svg>")
