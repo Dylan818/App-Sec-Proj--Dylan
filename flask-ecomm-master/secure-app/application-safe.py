@@ -10,7 +10,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
-from defusedxml.ElementTree import parse
+
 
 
 app = Flask(__name__)
@@ -219,12 +219,6 @@ def checkout():
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
     return redirect('/thankyou')
-
-@app.route("/thankyou/")
-def thankyou():
-    with open("static/svg/thankyou.svg") as file:
-        document = parse(file)
-        return render_template('thankyou.html' , document=document)
 
 
 @app.route("/removefromcart/", methods=["GET"])
