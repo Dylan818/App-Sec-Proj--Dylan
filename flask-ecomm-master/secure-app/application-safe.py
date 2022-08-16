@@ -55,7 +55,7 @@ def d_test():
 
 @app.after_request
 def after_request(response):
-    response.headers['Access-Control-Allow-Origin'] = "http://localhost" # when deploy change to asgn-da##.eltontay.com
+    response.headers['Access-Control-Allow-Origin'] = "https://aspj-dahj.eltontay.com" # when deploy change to asgn-da##.eltontay.com
 
     return response
 @app.route("/details")
