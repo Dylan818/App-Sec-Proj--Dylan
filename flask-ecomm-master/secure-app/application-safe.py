@@ -10,7 +10,7 @@ from flask_jwt_extended import JWTManager, create_access_token
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
-
+import logging
 
 
 app = Flask(__name__)
@@ -19,6 +19,8 @@ app.config["SESSION_TYPE"] = "filesystem"
 app.config['SECRET_KEY'] = "2917dedc-f90d-4375-9beb-70e4814b1ced"
 app.config['JWT_SECRET_KEY'] = '57716098c68c4f02bba85bbf82359be3'
 Session(app)
+
+logging.basicConfig(filename='record.log',level = logging.INFO ,format='%(asctime)s - %(levelname)s - %(message)s')
 
 app.config['SESSION_COOKIE_HTTPONLY'] = False
 jwt = JWTManager(app)
@@ -57,7 +59,6 @@ def d_test():
 @app.after_request
 def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = "https://aspj-dahj.eltontay.com" # when deploy change to asgn-da##.eltontay.com
-    db.execute("INSERT INTO logs VALUES (:response)", response = str(response))
 
     return response
 @app.route("/details")
@@ -144,6 +145,7 @@ def buy():
         db.execute("INSERT INTO cart (id, qty, country, image, price, subTotal, cust_id) VALUES (:id, :qty, :country, :image, :price, :subTotal, :cust_id)", id=id, qty=qty, country=country, image=image, price=price, subTotal=subTotal, cust_id = cust_id)
         cart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
         shopcartlen = len(cart)
+        logging.info(f"{cust_id} added item to cart")
         for i in range(shopcartlen):
             total += cart[i]["SUM(subTotal)"]
             totalItems += cart[i]["SUM(qty)"]
@@ -218,6 +220,7 @@ def checkout():
     shoppingCart = []
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
+    logging.info(f'{cust_id} has checked out')
     return redirect('/')
 
 
@@ -233,6 +236,7 @@ def removefromcart():
     for i in range(shop):
         total += shoppingCart[i]["SUM(subTotal)"]
         totalItems += shoppingCart[i]["SUM(qty)"]
+    logging.info(f"{cust_id} removed item from cart")
     return render_template ("cart.html", shoppingCart=shoppingCart, shopLen=shop, total=total, totItems=totalItems,  session=session)
 
 
@@ -341,6 +345,7 @@ def logged():
             except:
                 db.execute("CREATE TABLE attempts (users VARCHAR(255), attempts int )")
             if session['admin'] is True:
+                logging.info("Admin Logged In")
                 return redirect('/admin')
         if len(rows) == 1:
             session['user'] = user
@@ -357,8 +362,10 @@ def logged():
             if l == True:
                 db.execute("UPDATE attempts SET loginattempts = 3 WHERE users = :user;", user = user)
         if 'user' in session:
+            logging.info(f"{user} logged in")
             return redirect ( "/" )
         else:
+            logging.warning(f"{user} failed login")
             check = db.execute("SELECT users FROM attempts")
             l = False
             for x in check:
@@ -370,6 +377,7 @@ def logged():
                 db.execute("UPDATE attempts SET loginattempts = loginattempts - 1 WHERE users = :user;", user = user)
         return render_template ( "login.html", msg="Wrong username or password." )
     else:
+        logging.error(f"{user} has been locked out and is trying to login")
         return render_template("login.html", msg='Too Many Attempts, you have been logged out')
 
 @app.route("/history/")
@@ -385,6 +393,8 @@ def history():
 @app.route("/logout/")
 def logout():
     db.execute("DELETE from cart")
+    session['user'] = user
+    logging.info(f"{user} has logged out")
     session.clear()
     return redirect("/")
 
@@ -404,18 +414,23 @@ def registration():
     uid = str(uuid.uuid4())
     if password == confirm:
         if validate_username(username) is False:
+            logging.info("Failed registration")
             return render_template ( "new.html", msg="Invalid username!")
         elif validate_password(request.form["password"]) is False:
+            logging.info("Failed registration")
             return render_template ( "new.html", msg="Invalid password!" )
         rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = encrypt(get_key(), username.encode('utf-8')) )
         if len( rows ) > 0:
+            logging.info("Failed registration")
             return render_template ( "new.html", msg="Username already exists!" )
         email = encrypt(get_key(), email.encode('utf-8'))
         username = encrypt(get_key(), username.encode('utf-8'))
         db.execute ( "INSERT INTO users (uid, username, password, fname, lname, email) VALUES (:uid, :username, :password, :fname, :lname, :email)",
                         uid = uid, username=username, password=password, fname=fname, lname=lname, email=email )
     else:
+        logging.info("Failed registration")
         return render_template ( "new.html", msg="Password must Match!")
+    logging.info(f"{username} created an account")
     return render_template ( "login.html" )
 
 
