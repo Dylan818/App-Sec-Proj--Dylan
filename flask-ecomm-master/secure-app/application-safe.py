@@ -228,6 +228,13 @@ def login():
 def new():
     return render_template("new.html")
 
+@app.route('/adhome')
+def adhome():
+    return render_template('adminhome.html')
+
+@app.route('/adnew', methods = ["GET"])
+def adnew():
+    return render_template('adminNew.html')
 
 def validate_username(user_input):
     pattern = r"\d|[a-z]|[A-Z]"
@@ -294,6 +301,21 @@ def logged():
         attempts = 1
     if attempts > 0:
         rows = db.execute(request_query, username = user, password = pwd)
+        if rows[0]['Admin'] == 'Yes':
+            session['admin'] = True
+            session['user'] = user
+            session['time'] = datetime.now( )
+            session['uid'] = rows[0]["uid"]
+            access_token = create_access_token(identity=session['uid'])
+            session['token'] = access_token
+            try:
+                check = db.execute("SELECT users FROM attempts")
+                if user in check:
+                    db.execute("UPDATE attempts SET loginattempts = 3 WHERE users = :user", user=user)
+            except:
+                db.execute("CREATE TABLE attempts (users VARCHAR(255), attempts int )")
+            if 'user' in session:
+                return render_template("adminhome.html")
         if len(rows) == 1:
             session['user'] = user
             session['time'] = datetime.now( )
