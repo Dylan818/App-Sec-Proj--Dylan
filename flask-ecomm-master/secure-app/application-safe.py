@@ -51,7 +51,7 @@ def d_test():
     emsg = encrypt(get_key(), msg.encode('utf-8'))
     print(decrypt(get_key(), emsg), "decrypted")
 #state = db.execute("DROP TABLE users")
-#state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40));")
+#state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40), admin varchar(100));")
 
 @app.after_request
 def after_request(response):
@@ -97,6 +97,28 @@ def index():
         shoesLen = len(shoes)
         return render_template ("index.html", shoppingCart=cart, shoes=shoes, shopLen=shopLen, shoesLen=shoesLen, total=total, totItems=totalItems, display=display, session=session )
     return render_template ( "index.html", shoes=shoes, shoppingCart=cart, shoesLen=shoesLen, shopLen=shop, total=total, totItems=totalItems, display=display)
+
+
+@app.route("/admin")
+def index_admin():
+    shoes = db.execute("SELECT * FROM shoes ORDER BY country ASC")
+    shoesLen = len(shoes)
+    cart = []
+    shop = len(cart)
+    totalItems = 0
+    total = 0
+    display = 0
+    if 'admin' in session :
+        cart = db.execute("SELECT country, image, SUM(qty), SUM(subTotal), price, id FROM cart GROUP BY country")
+        shopLen = len(cart)
+        for i in range(shop):
+            total += cart[i]["SUM(subTotal)"]
+            totalItems += cart[i]["SUM(qty)"]
+        shoes = db.execute("SELECT * FROM shoes ORDER BY country ASC")
+        shoesLen = len(shoes)
+        return render_template ("adminhome.html", shoppingCart=cart, shoes=shoes, shopLen=shopLen, shoesLen=shoesLen, total=total, totItems=totalItems, display=display, session=session )
+    else:
+        return render_template ( "index.html", shoes=shoes, shoppingCart=cart, shoesLen=shoesLen, shopLen=shop, total=total, totItems=totalItems, display=display)
 
 
 @app.route("/buy/", methods = ["POST"])
@@ -293,6 +315,7 @@ def logged():
     pwd = hashing_pwsd(request.form["password"])
     request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
     if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
+        print("hi1")
         return render_template ( "login.html", msg="Wrong username or password." )
     user = encrypt(get_key(), user.encode('utf-8'))
     try:
@@ -301,7 +324,8 @@ def logged():
         attempts = 1
     if attempts > 0:
         rows = db.execute(request_query, username = user, password = pwd)
-        if rows[0]['Admin'] == 'Yes':
+        print("hi2")
+        if len(rows) == 1 and rows[0]['admin'] == 'yes':
             session['admin'] = True
             session['user'] = user
             session['time'] = datetime.now( )
@@ -314,8 +338,8 @@ def logged():
                     db.execute("UPDATE attempts SET loginattempts = 3 WHERE users = :user", user=user)
             except:
                 db.execute("CREATE TABLE attempts (users VARCHAR(255), attempts int )")
-            if 'user' in session:
-                return render_template("adminhome.html")
+            if session['admin'] is True:
+                return redirect('/admin')
         if len(rows) == 1:
             session['user'] = user
             session['time'] = datetime.now( )
@@ -414,9 +438,20 @@ def show_sql():
     print(rows_shoes)
     print(rows_purchases)
 
-def add_row():
-    db.execute("ALTER TABLE cart ADD cust_id VARCHAR (100);")
+#admin details
+#username: adminAccount
+#password: adminPass
+def insert_admin():
+    uid = str(uuid.uuid4())
+    username = encrypt(get_key(), 'test'.encode('utf-8'))
+    password = hashing_pwsd('123')
+    fname = 'admin'
+    lname = 'admin'
+    email = encrypt(get_key(),'admin@gmail.com'.encode('utf-8'))
+    admin = 'yes'
+    db.execute("INSERT INTO users (uid, username, password, fname, lname, email, admin) VALUES (:uid, :username, :password, :fname, :lname, :email, :admin)", uid=uid, username=username, password=password, fname=fname, lname=lname,email=email, admin=admin)
 
 if __name__ == "__main__":
    show_sql()
+
    app.run( host='0.0.0.0', port=90)
