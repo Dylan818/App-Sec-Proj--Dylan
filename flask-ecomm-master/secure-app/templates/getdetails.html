@@ -57,7 +57,7 @@
             async function getDetails(){
                 let token = getCookie('session');
                 console.log('{{token}}')
-                let response = await fetch('http://localhost:90/webapi/getdetails/{{token}}', {method: 'GET', credentials:'include'});
+                let response = await fetch('https://aspj-dahj.eltontay.com/webapi/getdetails/{{token}}', {method: 'GET', credentials:'include'});
                 let data = await response.json()
                 document.getElementById('email').innerHTML = data[0].email;
                 document.getElementById('fname').innerHTML = data[0].fname;
