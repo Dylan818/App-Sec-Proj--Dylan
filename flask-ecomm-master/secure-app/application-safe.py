@@ -57,6 +57,7 @@ def d_test():
 @app.after_request
 def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = "https://aspj-dahj.eltontay.com" # when deploy change to asgn-da##.eltontay.com
+    db.execute("INSERT INTO logs VALUES (:response)", response = str(response))
 
     return response
 @app.route("/details")
@@ -78,12 +79,6 @@ def get_details(token):
         return jsonify(details)
     return jsonify(message="Not authorised!")
 
-@app.after_request
-def after_request_func(response):
-    print("after_request executing")
-    print(response)
-    db.execute("INSERT INTO logs VALUES (:response)", response = str(response))
-    return response
 
 @app.route("/")
 def index():
