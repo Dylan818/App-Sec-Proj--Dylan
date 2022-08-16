@@ -52,7 +52,7 @@ def d_test():
     emsg = encrypt(get_key(), msg.encode('utf-8'))
     print(decrypt(get_key(), emsg), "decrypted")
 #state = db.execute("DROP TABLE users")
-#state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40), admin varchar(100));")
+#state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40), admin varchar(10));")
 
 @app.after_request
 def after_request(response):
@@ -218,7 +218,7 @@ def checkout():
     shoppingCart = []
     shopLen = len(shoppingCart)
     totItems, total, display = 0, 0, 0
-    return redirect('/thankyou')
+    return redirect('/')
 
 
 @app.route("/removefromcart/", methods=["GET"])
