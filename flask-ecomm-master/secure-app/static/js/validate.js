@@ -16,10 +16,6 @@ function reset_form ( )
     SUBMIT.show();
 }
 
-/**
- * Validates the information in the register form so that
- * the server is not required to check this information.
- */
 function validate ( )
 {
     let valid = true;
@@ -27,53 +23,45 @@ function validate ( )
     SUBMIT.hide();
     var letters = /^[A-Za-z]+$/;
     var decimal =  /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s)$/;
-
-    // This currently checks to see if the username is
-    // present and if it is at least 10 characters in length.
     if ( !USERNAME.val() || USERNAME.val().length < 10 || !USERNAME.value.match(letters) )
     {
-        // Show an invalid input message
-        USERNAME_MSG.html( "Username must be 10 characters or more and must only contain letters" );
+        USERNAME_MSG.html( "Username must only be 10 characters and contain letters!" );
         USERNAME_MSG.show();
-        // Indicate the type of bad input in the console.
-        console.log( "Bad username" );
-        // Indicate that the form is invalid.
         valid = false;
     }
-    // TODO: Add your additional checks here.
 
 
     if ( USERNAME.val() != USERNAME.val().toLowerCase())
     {
-        USERNAME_MSG.html("Username must be all lowercase");
+        USERNAME_MSG.html("Username must be in lowercase");
         USERNAME_MSG.show();
         valid = false;
     }
 
     if ( !PASSWORD.val() || PASSWORD.val().length < 12 || !PASSWORD.value.match(decimal) )
     {
-        PASSWORD_MSG.html("Password needs to be at least 12 characters long and contain 1 lowercase letter,1 uppercase letter, 1 number and 1 special character ");
+        PASSWORD_MSG.html("Password needs to be at least 12 characters long and must contains lowercase letters, uppercase letters, numbers and special characters ");
         PASSWORD_MSG.show();
         valid = false;
     }
 
     if ( !CONFIRM.val() || PASSWORD.val() != CONFIRM.val() )
     {
-        CONFIRM_MSG.html("Passwords don't match");
+        CONFIRM_MSG.html("Passwords must match!");
         CONFIRM_MSG.show();
         valid = false;
     }
 
     if ( !FNAME.val() || !FNAME.value.match(letters))
     {
-        FNAME_MSG.html("First name must not be empty and must only contain letters");
+        FNAME_MSG.html("Field must only contain letters and must not be empty!");
         FNAME_MSG.show();
         valid = false;
     }
 
     if ( !LNAME.val() || !LNAME.value.match(letters))
     {
-        LNAME_MSG.html("Last name must not be empty and must only contain letters");
+        LNAME_MSG.html("Field must only contain letters and must not be empty!");
         LNAME_MSG.show();
         valid = false;
     }
@@ -87,14 +75,12 @@ function validate ( )
         valid = false;
     }
 
-    // If the form is valid, reset error messages
     if ( valid )
     {
         reset_form ( );
     }
 }
 
-// Bind the validate function to the required events.
 $(document).ready ( validate );
 USERNAME.change ( validate );
 PASSWORD.change ( validate );

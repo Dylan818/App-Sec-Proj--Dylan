@@ -12,7 +12,7 @@ from Crypto.Util.Padding import pad, unpad
 import os
 import logging
 
-
+# Packages may malfunction due to pycharm virtual environment
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
@@ -53,13 +53,11 @@ def d_test():
     print(msg)
     emsg = encrypt(get_key(), msg.encode('utf-8'))
     print(decrypt(get_key(), emsg), "decrypted")
-#state = db.execute("DROP TABLE users")
-#state2 = db.execute("CREATE TABLE users(uid varchar(100) PRIMARY KEY, username varchar(20), password varchar(100), fname varchar(20), lname varchar(20), email varchar(40), admin varchar(10));")
+
 
 @app.after_request
 def after_request(response):
-    response.headers['Access-Control-Allow-Origin'] = "https://aspj-dahj.eltontay.com" # when deploy change to asgn-da##.eltontay.com
-
+    response.headers['Access-Control-Allow-Origin'] = "https://aspj-dahj.eltontay.com" # when testing with localhost, change this field to http://localhost:<portnumber> and access it in browser using same address
     return response
 @app.route("/details")
 def details():
@@ -126,10 +124,8 @@ def index_admin():
 
 @app.route("/buy/", methods = ["POST"])
 def buy():
-    cart = []
     totalItems = 0
     total = 0
-    display = 0
     qty = int(request.form['quantity'])
     if session:
         id = int(request.form['id'])
@@ -247,7 +243,7 @@ def login():
 
 @app.route("/new/", methods=["GET"])
 def new():
-    return render_template("new.html")
+    return render_template("registration.html")
 
 @app.route('/adhome')
 def adhome():
@@ -284,33 +280,6 @@ def validate_password(user_input):
         return False
 
 
-@app.route("/loggedapi/", methods=["POST"] )
-def loggedapi():
-    if request.is_json:
-        user = request.json["username"]
-        pwd = hashing_pwsd(request.json["password"])
-    else:
-        user= request.form['username']
-        pwd = hashing_pwsd(request.form['password'])
-    request_query = "SELECT * FROM users WHERE username = :username AND password = :password"
-    if user == "" or pwd == "" or validate_username(user) is False or validate_password(request.form["password"]) is False:
-        return render_template ( "login.html", msg="Wrong username or password." )
-    user = encrypt(get_key(), user.encode('utf-8'))
-    rows = db.execute(request_query, username = user, password = pwd)
-    if len(rows) == 1:
-        session['user'] = user
-        session['time'] = datetime.now( )
-        session['uid'] = rows[0]["uid"]
-        print(session['uid'])
-    if 'user' in session:
-        access_token = create_access_token(identity=session['uid'])
-        return jsonify(message="logged", access_token = access_token)
-    return jsonify(message="Invalid login!")
-
-
-
-
-
 @app.route("/logged/", methods=["POST"] )
 def logged():
     user = request.form["username"].lower()
@@ -334,7 +303,7 @@ def logged():
         if len(rows) == 1 and rows[0]['admin'] == 'yes':
             session['admin'] = True
             session['user'] = user
-            session['time'] = datetime.now( )
+            session['time'] = datetime.now()
             session['uid'] = rows[0]["uid"]
             access_token = create_access_token(identity=session['uid'])
             session['token'] = access_token
@@ -382,18 +351,20 @@ def logged():
 
 @app.route("/history/")
 def history():
-    shoppingCart = []
-    shopLen = len(shoppingCart)
-    totItems, total, display = 0, 0, 0
+    Cart = []
+    shopLen = len(Cart)
+    totItems = 0
+    total = 0
+    display = 0
     myshoes = db.execute("SELECT * FROM purchases WHERE uid=:uid", uid=session["uid"])
     myshoesLen = len(myshoes)
-    return render_template("history.html", shoppingCart=shoppingCart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session, myshoes=myshoes, myshoesLen=myshoesLen)
+    return render_template("history.html", shoppingCart=Cart, shopLen=shopLen, total=total, totItems=totItems, display=display, session=session, myshoes=myshoes, myshoesLen=myshoesLen)
 
 
 @app.route("/logout/")
 def logout():
     db.execute("DELETE from cart")
-    session['user'] = user
+    user = session['user']
     logging.info(f"{user} has logged out")
     session.clear()
     return redirect("/")
@@ -415,21 +386,21 @@ def registration():
     if password == confirm:
         if validate_username(username) is False:
             logging.info("Failed registration")
-            return render_template ( "new.html", msg="Invalid username!")
+            return render_template ( "registration.html", msg="Invalid username!")
         elif validate_password(request.form["password"]) is False:
             logging.info("Failed registration")
-            return render_template ( "new.html", msg="Invalid password!" )
+            return render_template ( "registration.html", msg="Invalid password!" )
         rows = db.execute( "SELECT * FROM users WHERE username = :username ", username = encrypt(get_key(), username.encode('utf-8')) )
         if len( rows ) > 0:
             logging.info("Failed registration")
-            return render_template ( "new.html", msg="Username already exists!" )
+            return render_template ( "registration.html", msg="Username already exists!" )
         email = encrypt(get_key(), email.encode('utf-8'))
         username = encrypt(get_key(), username.encode('utf-8'))
         db.execute ( "INSERT INTO users (uid, username, password, fname, lname, email) VALUES (:uid, :username, :password, :fname, :lname, :email)",
                         uid = uid, username=username, password=password, fname=fname, lname=lname, email=email )
     else:
         logging.info("Failed registration")
-        return render_template ( "new.html", msg="Password must Match!")
+        return render_template ( "registration.html", msg="Password must Match!")
     logging.info(f"{username} created an account")
     return render_template ( "login.html" )
 

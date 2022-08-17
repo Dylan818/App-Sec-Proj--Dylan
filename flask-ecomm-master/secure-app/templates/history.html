@@ -26,11 +26,11 @@ Country Flags Shoes Store - Home
             {% for i in range(myshoesLen) %}
               <tr>
                 <th scope="row">{{ i + 1 }}</th>
-                <td><img src="/static/img/{{ myshoes[i]["image"] }}" width="30px" alt="{{ myshoes[i]["team"] }}" /></td>
-                <td>{{ myshoes[i]["team"] }}</td>
+                <td><img src="/static/img/{{ myshoes[i]['image'] }}" width="30px" alt="{{ myshoes[i]['country'] }}" /></td>
+                <td>{{ myshoes[i]["country"] }}</td>
                 <td>{{ myshoes[i]["quantity"] }}</td>
                 <td>{{ myshoes[i]["date"] }}</td>
-                <td><a href="/filter/?id={{ myshoes[i]["id"] }}"><button type="button" class="btn btn-warning">Buy Again</button></a></td>
+                <td><a href="/filter/?id={{ myshoes[i]['id'] }}"><button type="button" class="btn btn-warning">Buy Again</button></a></td>
               </tr>
             </tbody>
             {% endfor %}
